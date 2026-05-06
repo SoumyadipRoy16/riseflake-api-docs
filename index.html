@@ -62,6 +62,48 @@
     scrollbar-color: #333 transparent;
   }
 
+  .sidebar-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #1c1c1c;
+    background: #101010;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .sidebar-btn {
+    border: 1px solid #2a2a2a;
+    background: #181818;
+    color: var(--gray-200);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0.35rem 0.45rem;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .sidebar-btn:hover { background: #222; }
+
+  .global-sidebar-toggle {
+    position: fixed;
+    left: 0.75rem;
+    top: 0.75rem;
+    z-index: 120;
+    border: 1px solid #2d2d2d;
+    background: #0f0f0f;
+    color: var(--white);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0.45rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    display: none;
+  }
+
   .sidebar-logo {
     padding: 1.5rem 1.5rem 1rem;
     border-bottom: 1px solid #222;
@@ -125,8 +167,9 @@
   .main {
     margin-left: var(--sidebar-w);
     flex: 1;
-    max-width: 900px;
-    padding: 3rem 4rem;
+    max-width: none;
+    width: calc(100vw - var(--sidebar-w));
+    padding: 2rem 2rem;
   }
 
   /* ─── SECTIONS ───────────────────────────────── */
@@ -170,7 +213,6 @@
     color: var(--gray-600);
     font-weight: 300;
     line-height: 1.7;
-    margin-bottom: 2rem;
     border-left: 3px solid var(--black);
     padding-left: 1rem;
   }
@@ -437,23 +479,73 @@
   }
   .endpoint-header.open .toggle-arrow { transform: rotate(180deg); }
 
+  .api-version-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+  .tab-btn {
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    color: var(--gray-600);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    background: var(--black);
+    color: var(--white);
+    border-color: var(--black);
+  }
+  .api-tab-panel { display: none; }
+  .api-tab-panel.active { display: block; }
+
+  .endpoint-matrix {
+    font-size: 0.78rem;
+    table-layout: fixed;
+  }
+  .endpoint-matrix th:nth-child(1), .endpoint-matrix td:nth-child(1) { width: 78px; }
+  .endpoint-matrix th:nth-child(2), .endpoint-matrix td:nth-child(2) { width: 290px; }
+  .endpoint-matrix th:nth-child(3), .endpoint-matrix td:nth-child(3) { width: 260px; }
+  .endpoint-matrix td { word-break: break-word; }
+
+  body.sidebar-closed .sidebar { display: none; }
+  body.sidebar-closed .main {
+    margin-left: 0;
+    width: 100vw;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+  body.sidebar-closed .global-sidebar-toggle { display: inline-block; }
+
   @media (max-width: 860px) {
     .main { padding: 2rem 1.5rem; }
-    .sidebar { display: none; }
+    .sidebar { display: block; width: min(86vw, 320px); }
+    body.sidebar-closed .sidebar { display: none; }
     .main { margin-left: 0; }
     .stack-grid { grid-template-columns: repeat(2, 1fr); }
+    .global-sidebar-toggle { display: inline-block; }
+    body.sidebar-closed .main { padding-left: 1rem; padding-right: 1rem; }
+    .endpoint-matrix th:nth-child(2), .endpoint-matrix td:nth-child(2) { width: 200px; }
+    .endpoint-matrix th:nth-child(3), .endpoint-matrix td:nth-child(3) { width: 220px; }
   }
 </style>
 </head>
 <body>
+<button class="global-sidebar-toggle" id="openSidebarBtn" title="Open sidebar navigation">NAV</button>
 <div class="layout">
 
 <!-- ───── SIDEBAR ───── -->
 <nav class="sidebar">
+  <div class="sidebar-controls">
+    <button class="sidebar-btn" id="closeSidebarBtn" title="Close sidebar">X</button>
+  </div>
   <div class="sidebar-logo">
     <div class="name">RISEFLAKE</div>
     <div class="sub">API Reference</div>
-    <div class="sidebar-version">v1 · Node.js / Express</div>
+    <div class="sidebar-version">Node.js / Express</div>
   </div>
 
   <div class="nav-section">
@@ -469,6 +561,7 @@
 
   <div class="nav-section">
     <div class="nav-label">Endpoints</div>
+    <a class="nav-link" href="#endpoint-matrix">v1/v2 Matrix</a>
     <a class="nav-link" href="#ep-auth">Auth</a>
     <a class="nav-link" href="#ep-users">Users</a>
     <a class="nav-link" href="#ep-jobs">Jobs</a>
@@ -499,13 +592,13 @@
   <div class="doc-header" id="overview">
     <div class="badge-row">
       <span class="badge dark">REST API</span>
-      <span class="badge">v1</span>
+      <span class="badge">v1 + v2</span>
       <span class="badge">Node.js 18+</span>
       <span class="badge">PostgreSQL</span>
       <span class="badge">Socket.IO</span>
     </div>
     <h1>Riseflake<br>Backend API</h1>
-    <p class="lead">A comprehensive job-platform backend powering authentication, job postings, applications, real-time messaging, subscriptions, and admin analytics. All endpoints live under <code>/api/v1</code>.</p>
+    <p class="lead">A comprehensive job-platform backend powering authentication, job postings, applications, real-time messaging, subscriptions, and admin analytics.</p>
   </div>
 
   <!-- TECH STACK -->
@@ -1821,59 +1914,361 @@
     </div>
 
     <h3 style="margin-top:2rem">Education  <code style="font-size:0.8rem">/education</code></h3>
-    <p>Full CRUD for education entries on a user profile.</p>
+    <p>Full CRUD for education entries with detailed request and response formats.</p>
 
-    <div class="overview-grid">
-      <div class="overview-cell"><div class="oc-label">Add</div><div class="oc-path">POST /education</div><div class="oc-desc">Add education entry</div></div>
-      <div class="overview-cell"><div class="oc-label">List</div><div class="oc-path">GET /education</div><div class="oc-desc">Get all education entries</div></div>
-      <div class="overview-cell"><div class="oc-label">Update</div><div class="oc-path">PATCH /education/:id</div><div class="oc-desc">Update an entry</div></div>
-      <div class="overview-cell"><div class="oc-label">Delete</div><div class="oc-path">DELETE /education/:id</div><div class="oc-desc">Remove an entry</div></div>
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/education</span>
+        <span class="endpoint-desc">Add education entry</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "qualification": "B.Tech", "course": "Computer Science", "institution_name": "ABC University", "passing_year": 2025, "specialization": "AI", "cgpa": 8.2 }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "result": { "id": 101, "qualification": "B.Tech", "course": "Computer Science" } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/education</span>
+        <span class="endpoint-desc">Get all education entries</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "result": [{ "id": 101, "qualification": "B.Tech", "course": "Computer Science", "institution_name": "ABC University" }] }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/education/:id</span>
+        <span class="endpoint-desc">Update education entry</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body (partial)</div>
+        <pre>{ "course": "Data Science", "cgpa": 8.5 }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "result": { "id": 101, "course": "Data Science", "cgpa": 8.5 } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/education/:id</span>
+        <span class="endpoint-desc">Delete education entry</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "message": "Education deleted successfully" }</pre></div>
     </div>
 
     <h3 style="margin-top:1.5rem">Work Experience  <code style="font-size:0.8rem">/work-experience</code></h3>
-    <div class="overview-grid">
-      <div class="overview-cell"><div class="oc-label">Add</div><div class="oc-path">POST /work-experience</div><div class="oc-desc">Add work experience</div></div>
-      <div class="overview-cell"><div class="oc-label">List</div><div class="oc-path">GET /work-experience</div><div class="oc-desc">List all experiences</div></div>
-      <div class="overview-cell"><div class="oc-label">Update</div><div class="oc-path">PATCH /work-experience/:id</div><div class="oc-desc">Update experience</div></div>
-      <div class="overview-cell"><div class="oc-label">Delete</div><div class="oc-path">DELETE /work-experience/:id</div><div class="oc-desc">Remove experience</div></div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/work-experience</span>
+        <span class="endpoint-desc">Add work experience</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "company_name": "Tech Pvt Ltd", "job_title": "Software Engineer", "start_date": "2023-01-01", "end_date": "2025-01-01", "employment_type": "full-time", "location": "Bengaluru", "job_description": "Backend APIs" }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "data": { "id": 54, "company_name": "Tech Pvt Ltd", "job_title": "Software Engineer" } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/work-experience</span>
+        <span class="endpoint-desc">List all work experiences</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "data": [{ "id": 54, "company_name": "Tech Pvt Ltd", "job_title": "Software Engineer" }] }</pre></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/work-experience/:id</span>
+        <span class="endpoint-desc">Update work experience</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body (partial)</div>
+        <pre>{ "job_title": "Senior Software Engineer", "is_current": true }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "data": { "id": 54, "job_title": "Senior Software Engineer", "is_current": true } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/work-experience/:id</span>
+        <span class="endpoint-desc">Delete work experience</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "message": "Work experience deleted successfully" }</pre></div>
     </div>
 
     <h3 style="margin-top:1.5rem">Skills  <code style="font-size:0.8rem">/skills</code></h3>
-    <div class="overview-grid">
-      <div class="overview-cell"><div class="oc-label">List</div><div class="oc-path">GET /skills</div><div class="oc-desc">All available skills</div></div>
-      <div class="overview-cell"><div class="oc-label">Search</div><div class="oc-path">GET /skills/search?q=</div><div class="oc-desc">Search skills</div></div>
-      <div class="overview-cell"><div class="oc-label">Add to profile</div><div class="oc-path">POST /skills/user</div><div class="oc-desc">Add skill to own profile</div></div>
-      <div class="overview-cell"><div class="oc-label">Remove</div><div class="oc-path">DELETE /skills/user/:id</div><div class="oc-desc">Remove skill from profile</div></div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/skills</span>
+        <span class="endpoint-desc">List available skills</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "data": [{ "id": 1, "name": "Node.js" }, { "id": 2, "name": "PostgreSQL" }] }</pre></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/skills/search?q=</span>
+        <span class="endpoint-desc">Search skills by keyword</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "data": [{ "id": 1, "name": "Node.js" }] }</pre></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/skills/user</span>
+        <span class="endpoint-desc">Add skill to profile</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "skill_id": 1 }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "message": "Skill added", "result": { "user_skill_id": 33, "skill_id": 1 } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/skills/user/:id</span>
+        <span class="endpoint-desc">Remove skill from profile</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "message": "Skill removed successfully" }</pre></div>
     </div>
 
     <h3 style="margin-top:1.5rem">Certificates  <code style="font-size:0.8rem">/certificates</code></h3>
-    <div class="overview-grid">
-      <div class="overview-cell"><div class="oc-label">Add</div><div class="oc-path">POST /certificates</div><div class="oc-desc">Add certificate</div></div>
-      <div class="overview-cell"><div class="oc-label">List</div><div class="oc-path">GET /certificates</div><div class="oc-desc">Get all certificates</div></div>
-      <div class="overview-cell"><div class="oc-label">Update</div><div class="oc-path">PATCH /certificates/:id</div><div class="oc-desc">Update certificate</div></div>
-      <div class="overview-cell"><div class="oc-label">Delete</div><div class="oc-path">DELETE /certificates/:id</div><div class="oc-desc">Remove certificate</div></div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/certificates</span>
+        <span class="endpoint-desc">Add certificate</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "certificate_name": "AWS SA", "issuing_organization": "AWS", "issue_date": "2024-01-10", "expiry_date": "2027-01-10", "credential_id": "ABC123", "credential_url": "https://..." }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "result": { "id": 19, "certificate_name": "AWS SA", "issuing_organization": "AWS" } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/certificates</span>
+        <span class="endpoint-desc">Get all certificates</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "result": [{ "id": 19, "certificate_name": "AWS SA", "issuing_organization": "AWS" }] }</pre></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/certificates/:id</span>
+        <span class="endpoint-desc">Update certificate</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body (partial)</div>
+        <pre>{ "certificate_name": "AWS SA Professional", "credential_url": "https://new-link" }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "result": { "id": 19, "certificate_name": "AWS SA Professional" } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/certificates/:id</span>
+        <span class="endpoint-desc">Delete certificate</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "message": "Certificate removed successfully" }</pre></div>
     </div>
 
     <h3 style="margin-top:1.5rem">Projects  <code style="font-size:0.8rem">/projects</code></h3>
-    <div class="overview-grid">
-      <div class="overview-cell"><div class="oc-label">Add</div><div class="oc-path">POST /projects</div><div class="oc-desc">Add project</div></div>
-      <div class="overview-cell"><div class="oc-label">List</div><div class="oc-path">GET /projects</div><div class="oc-desc">List all projects</div></div>
-      <div class="overview-cell"><div class="oc-label">Update</div><div class="oc-path">PATCH /projects/:id</div><div class="oc-desc">Update project</div></div>
-      <div class="overview-cell"><div class="oc-label">Delete</div><div class="oc-path">DELETE /projects/:id</div><div class="oc-desc">Remove project</div></div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/projects</span>
+        <span class="endpoint-desc">Add project</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "title": "Resume Builder", "description": "Career platform module", "technologies": ["React", "Node.js"], "project_url": "https://...", "github_url": "https://github.com/...", "start_date": "2024-01-01", "end_date": "2024-08-01" }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "result": { "id": 71, "title": "Resume Builder", "technologies": ["React", "Node.js"] } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/projects</span>
+        <span class="endpoint-desc">List all projects</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "result": [{ "id": 71, "title": "Resume Builder", "project_url": "https://..." }] }</pre></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/projects/:id</span>
+        <span class="endpoint-desc">Update project</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body (partial)</div>
+        <pre>{ "title": "Resume Builder Pro", "technologies": ["React", "Node.js", "Redis"] }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "result": { "id": 71, "title": "Resume Builder Pro" } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/projects/:id</span>
+        <span class="endpoint-desc">Delete project</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "message": "Project removed successfully" }</pre></div>
     </div>
 
     <h3 style="margin-top:1.5rem">Recruiter Profile  <code style="font-size:0.8rem">/recruiter-profile</code></h3>
-    <div class="overview-grid">
-      <div class="overview-cell"><div class="oc-label">Get</div><div class="oc-path">GET /recruiter-profile</div><div class="oc-desc">Get own recruiter profile</div></div>
-      <div class="overview-cell"><div class="oc-label">Create/Update</div><div class="oc-path">PATCH /recruiter-profile</div><div class="oc-desc">Upsert recruiter profile</div></div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/recruiter-profile</span>
+        <span class="endpoint-desc">Get own recruiter profile</span>
+        <span class="auth-badge required">auth · role 2</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "result": { "designation": "Hiring Manager", "company_name": "Tech Pvt Ltd", "industry": "IT", "skills": [] } }</pre></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/recruiter-profile</span>
+        <span class="endpoint-desc">Create/Update recruiter profile</span>
+        <span class="auth-badge required">auth · role 2</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body (partial)</div>
+        <pre>{ "company_name": "Tech Pvt Ltd", "designation": "Talent Acquisition Lead", "company_size": "201-500", "industry": "IT", "about": "Hiring backend engineers" }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "message": "Recruiter profile updated", "result": { "company_name": "Tech Pvt Ltd", "designation": "Talent Acquisition Lead" } }</pre>
+      </div>
     </div>
 
     <h3 style="margin-top:1.5rem">User Profile (Candidate)  <code style="font-size:0.8rem">/user-profile</code></h3>
-    <div class="overview-grid">
-      <div class="overview-cell"><div class="oc-label">Get</div><div class="oc-path">GET /user-profile</div><div class="oc-desc">Get own candidate profile</div></div>
-      <div class="overview-cell"><div class="oc-label">Get by username</div><div class="oc-path">GET /user-profile/:username</div><div class="oc-desc">View another user's profile</div></div>
-      <div class="overview-cell"><div class="oc-label">Update</div><div class="oc-path">PATCH /user-profile</div><div class="oc-desc">Update profile fields</div></div>
-      <div class="overview-cell"><div class="oc-label">Completion</div><div class="oc-path">GET /user-profile/completion</div><div class="oc-desc">Get profile completion %</div></div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/user-profile</span>
+        <span class="endpoint-desc">Get own candidate profile</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "data": { "first_name": "Jane", "last_name": "Doe", "about": "Backend developer", "social_links": {} } }</pre></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/user-profile/:username</span>
+        <span class="endpoint-desc">Get public profile by username</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "data": { "username": "jane_doe", "first_name": "Jane", "headline": "Software Engineer" } }</pre></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/user-profile</span>
+        <span class="endpoint-desc">Update candidate profile fields</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body (partial)</div>
+        <pre>{ "first_name": "Jane", "last_name": "Doe", "phone": "+91XXXXXXXXXX", "about": "Node.js and PostgreSQL developer" }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "data": { "first_name": "Jane", "last_name": "Doe", "about": "Node.js and PostgreSQL developer" } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/user-profile/completion</span>
+        <span class="endpoint-desc">Get profile completion percentage</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><pre>{ "status": true, "data": { "completion_percentage": 82, "missing_sections": ["projects"] } }</pre></div>
     </div>
   </div>
 
@@ -1980,6 +2375,163 @@
       <div class="overview-cell"><div class="oc-label">My Network</div><div class="oc-path">GET /mynetwork</div><div class="oc-desc">People you may know</div></div>
       <div class="overview-cell"><div class="oc-label">Homepage Jobs</div><div class="oc-path">GET /homepage-jobcards</div><div class="oc-desc">Featured job cards</div></div>
       <div class="overview-cell"><div class="oc-label">Homepage Content</div><div class="oc-path">GET /homepage-content</div><div class="oc-desc">CMS content for homepage</div></div>
+    </div>
+  </div>
+
+  <div class="doc-section" id="endpoint-matrix">
+    <h2>Complete Endpoint Matrix (v1 & v2)</h2>
+    <p>This section is aligned with <code>backend-riseflake/api/v1/routes</code> and <code>backend-riseflake/api/v2/routes</code>. For <strong>POST/PATCH/PUT/DELETE</strong>, request body format is listed. For <strong>GET</strong>, expected response data shape is listed.</p>
+
+    <div class="api-version-tabs">
+      <button class="tab-btn active" data-tab="tab-v1">v1</button>
+      <button class="tab-btn" data-tab="tab-v2">v2</button>
+    </div>
+
+    <div class="api-tab-panel active" id="tab-v1">
+      <table class="endpoint-matrix">
+        <thead><tr><th>Method</th><th>Path</th><th>Request Body (Write)</th><th>GET Expected Data</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td>/auth/me</td><td>-</td><td>{ status, platform, result: userObject }</td></tr>
+          <tr><td>POST</td><td>/auth/register</td><td>{ email, password, full_name, gender? }</td><td>-</td></tr>
+          <tr><td>POST</td><td>/auth/logout</td><td>{}</td><td>-</td></tr>
+          <tr><td>POST</td><td>/auth/refresh</td><td>{} (cookie-based)</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/auth/hibernate</td><td>{}</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/auth/delete</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/users, /users/search, /users/:userId</td><td>-</td><td>{ status, result: []|{}, pagination? }</td></tr>
+          <tr><td>PATCH</td><td>/users/:userId</td><td>checkUserUpdateInput (partial user fields)</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/users, /users/:userId</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/jobs, /jobs/:id, /jobs/:id/reported-users</td><td>-</td><td>{ status, result: []|{}, totalJobs?, pageCount? }</td></tr>
+          <tr><td>POST</td><td>/jobs</td><td>checkJobInput</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/jobs/:id</td><td>checkJobInput (partial allowed)</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/jobs/:id</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/applications/applicant-jobs, /applications/:id</td><td>-</td><td>{ status, result: []|{}, totalJobs?, pageCount? }</td></tr>
+          <tr><td>POST</td><td>/applications/apply</td><td>{ applicant_id, recruiter_id, job_id, resume? }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/education, /education/user/:userId, /education/options/qualifications</td><td>-</td><td>{ status, result: [] }</td></tr>
+          <tr><td>POST</td><td>/education</td><td>{ qualification, course, institution_name, passing_year, specialization?, board?, stream?, medium?, cgpa? }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/work-experience</td><td>-</td><td>{ status, data: [] }</td></tr>
+          <tr><td>POST</td><td>/work-experience</td><td>{ company_name, job_title, start_date, job_description?, employment_type?, location?, end_date?, is_current? }</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/work-experience/:id</td><td>checkWorkExperienceInput (partial)</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/work-experience/:id</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/company, /company/:id, /company/details/:slug</td><td>-</td><td>{ status, companies? [], result? {}, data? {}, filters? }</td></tr>
+          <tr><td>POST</td><td>/company</td><td>multipart: { company_name, website?, company_logo? }</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/company/:id</td><td>checkCompanyProfileInput</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/user-profile</td><td>-</td><td>{ status, data: {} }</td></tr>
+          <tr><td>POST</td><td>/user-profile</td><td>{ first_name, last_name, phone?, about? }</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/user-profile, /user-profile/about, /user-profile/social-links</td><td>{ ...partial profile fields }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/skills, /skills/search, /skills/suggested</td><td>-</td><td>{ status, data: [] }</td></tr>
+          <tr><td>POST</td><td>/skills/by-ids</td><td>{ ids: number[] }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/certificates, /certificates/user/:userId</td><td>-</td><td>{ status, result: [] }</td></tr>
+          <tr><td>POST</td><td>/certificates</td><td>{ certificate_name, issuing_organization, issue_date, expiry_date?, credential_id?, credential_url? }</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/certificates/:id</td><td>checkCertificateInput (partial)</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/certificates/:id</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/projects, /projects/user/:userId</td><td>-</td><td>{ status, result: [] }</td></tr>
+          <tr><td>POST</td><td>/projects</td><td>{ title, start_date, description?, technologies?, project_url?, github_url?, end_date? }</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/projects/:id</td><td>checkProjectInput (partial)</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/projects/:id</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/messages/users, /messages/:userId, /messages/search, /messages/unread/count, /messages/users/by-ids, /messages/images/usage, /messages/usage/stats</td><td>-</td><td>{ status, users?|messages?|data?, pagination? }</td></tr>
+          <tr><td>POST</td><td>/messages/:userId/send</td><td>{ text, image? }</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/messages/:messageId/seen</td><td>{}</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/messages/:messageId</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/recruiter-profile, /recruiter-profile/skills</td><td>-</td><td>{ status, result?|skills? }</td></tr>
+          <tr><td>PATCH</td><td>/recruiter-profile</td><td>{ company_name?, designation?, company_size?, industry?, about? }</td><td>-</td></tr>
+          <tr><td>POST</td><td>/recruiter-profile/skills</td><td>{ skills: [] }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/category, /category/:id, /category/slug/:slug, /category/search, /category/suggested</td><td>-</td><td>{ status, data?|entity }</td></tr>
+          <tr><td>POST</td><td>/category/by-ids</td><td>{ ids: [] }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/locations, /locations/:id, /locations/top, /locations/search</td><td>-</td><td>{ status, data: []|{} }</td></tr>
+          <tr><td>POST</td><td>/locations/by-ids</td><td>{ ids: [] }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/college, /college/search</td><td>-</td><td>{ status, data: [], total?, hasMore?, pagination? }</td></tr>
+          <tr><td>POST</td><td>/college</td><td>{ college_name, clg_website_url, clg_logo_url? }</td><td>-</td></tr>
+          <tr><td>POST</td><td>/college/by-ids</td><td>{ ids: [] }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/combined-search/search</td><td>-</td><td>{ status, data: [], metadata }</td></tr>
+
+          <tr><td>GET</td><td>/homepage-job-cards</td><td>-</td><td>{ status, result: [], count }</td></tr>
+          <tr><td>POST</td><td>/homepage-job-cards</td><td>{ job_id, custom_status?, gradient_from?, gradient_to?, display_order? }</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/homepage-job-cards/:id</td><td>depends on controller fields</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/homepage-job-cards/:id</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>POST</td><td>/password/forgot-password</td><td>{ email }</td><td>-</td></tr>
+          <tr><td>POST</td><td>/password/reset-password</td><td>{ token, newPassword, confirmPassword }</td><td>-</td></tr>
+          <tr><td>GET</td><td>/password/validate-reset-token/:token</td><td>-</td><td>{ status, message|validity }</td></tr>
+
+          <tr><td>GET</td><td>/sessions/my-sessions, /sessions/admin/all</td><td>-</td><td>{ status, sessions: [], pagination?, currentSessionId? }</td></tr>
+          <tr><td>POST</td><td>/sessions/update-device</td><td>{ device_id }</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/sessions/terminate/:sessionId, /sessions/terminate-others</td><td>{}</td><td>-</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="api-tab-panel" id="tab-v2">
+      <table class="endpoint-matrix">
+        <thead><tr><th>Method</th><th>Path</th><th>Request Body (Write)</th><th>GET Expected Data</th></tr></thead>
+        <tbody>
+          <tr><td>GET</td><td>/auth/me</td><td>-</td><td>{ status, platform, result: {} }</td></tr>
+          <tr><td>POST</td><td>/auth/refresh, /auth/logout</td><td>{} (cookie/session based)</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/auth/hibernate, /auth/delete</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/users, /users/search</td><td>-</td><td>{ status, result: [], pagination? }</td></tr>
+          <tr><td>DELETE</td><td>/users</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/jobs, /jobs/:id, /jobs/:id/reported-users</td><td>-</td><td>{ status, result: []|{}, totalJobs?, pageCount?, hasMore? }</td></tr>
+          <tr><td>DELETE</td><td>/jobs, /jobs/:id</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/messages/users, /messages/:userId, /messages/search, /messages/unread/count, /messages/users/by-ids, /messages/images/usage, /messages/usage/stats</td><td>-</td><td>{ status, users?|messages?|data? }</td></tr>
+          <tr><td>POST</td><td>/messages/:userId/send</td><td>{ text, image? }</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/messages/:messageId/seen</td><td>{}</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/messages/:messageId</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/sessions/my-sessions, /sessions/admin/all, /sessions/admin/stats</td><td>-</td><td>{ status, sessions?|data? }</td></tr>
+          <tr><td>POST</td><td>/sessions/update-device</td><td>{ device_id, fcm_token? }</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/sessions/terminate/:sessionId, /sessions/terminate-others, /sessions/admin/terminate/:sessionId, /sessions/admin/terminate-user/:userId</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/chat-monitoring/dashboard, /chat-monitoring/socket-status, /chat-monitoring/chat-pair/:userId1/:userId2</td><td>-</td><td>{ status?, data: {}|[] }</td></tr>
+
+          <tr><td>GET</td><td>/mynetwork, /mynetwork/random-cards, /mynetwork/featured, /mynetwork/top-profiles, /mynetwork/professionals-infinite, /mynetwork/recently-joined, /mynetwork/grow-stats, /mynetwork/random-profiles, /mynetwork/shuffled-top-profiles, /mynetwork/details/:username, /mynetwork/:username</td><td>-</td><td>{ status, users?|profiles?|members?|stats?|data? }</td></tr>
+
+          <tr><td>GET</td><td>/mentors, /mentors/:username</td><td>-</td><td>{ status, mentors?|profile? }</td></tr>
+
+          <tr><td>GET</td><td>/company</td><td>-</td><td>{ status, companies: [], filters? }</td></tr>
+          <tr><td>POST</td><td>/company</td><td>multipart: { company_name, website?, company_logo? }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/education</td><td>-</td><td>{ status, result: [] }</td></tr>
+          <tr><td>POST</td><td>/education</td><td>{ qualification, course, institution_name, passing_year, ... }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/college, /college/search</td><td>-</td><td>{ status, data: [], pagination? }</td></tr>
+          <tr><td>POST</td><td>/college/by-ids</td><td>{ ids: [] }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/user-profile</td><td>-</td><td>{ status, data: {} }</td></tr>
+          <tr><td>POST</td><td>/user-profile</td><td>{ first_name, last_name, phone?, about? }</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/user-profile</td><td>checkUserProfileInput (partial)</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/recruiter-profile</td><td>-</td><td>{ status, result: {} }</td></tr>
+          <tr><td>PATCH</td><td>/recruiter-profile</td><td>{ company_name?, designation?, ... }</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/combined-search/search</td><td>-</td><td>{ status, data: [], metadata }</td></tr>
+
+          <tr><td>GET</td><td>/indexed-jobs, /indexed-jobs/:id</td><td>-</td><td>{ status, result: []|{}, page?, total?, hasMore? }</td></tr>
+          <tr><td>POST</td><td>/indexed-jobs</td><td>{ job_title, company_name, location, job_url, source?, posted_date? }</td><td>-</td></tr>
+          <tr><td>PATCH</td><td>/indexed-jobs/:id</td><td>checkIndexedJobInput</td><td>-</td></tr>
+          <tr><td>DELETE</td><td>/indexed-jobs/:id</td><td>{}</td><td>-</td></tr>
+
+          <tr><td>GET</td><td>/homepage-job-cards</td><td>-</td><td>{ status, result: [], count }</td></tr>
+          <tr><td>POST</td><td>/homepage-job-cards</td><td>{ job_id, custom_status?, gradient_from?, gradient_to? }</td><td>-</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -2119,6 +2671,33 @@ npm start</pre>
     });
   }, { rootMargin: '-10% 0px -85% 0px' });
   sections.forEach(s => observer.observe(s));
+
+  // v1/v2 tab switcher
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const tabPanels = document.querySelectorAll('.api-tab-panel');
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      tabButtons.forEach((b) => b.classList.remove('active'));
+      tabPanels.forEach((p) => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = document.getElementById(target);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  // Sidebar close/open controls
+  const body = document.body;
+  const sidebar = document.querySelector('.sidebar');
+  const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+  const openSidebarBtn = document.getElementById('openSidebarBtn');
+  if (closeSidebarBtn) {
+    closeSidebarBtn.addEventListener('click', () => body.classList.add('sidebar-closed'));
+  }
+  if (openSidebarBtn) {
+    openSidebarBtn.addEventListener('click', () => body.classList.remove('sidebar-closed'));
+  }
+
 </script>
 </body>
 </html>

@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Frontend Architecture — Riseflake Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f5f0;
+    --gray-100: #e8e8e3;
+    --gray-200: #d0d0c8;
+    --gray-400: #8a8a80;
+    --gray-600: #555550;
+    --accent: #1a1a1a;
+    --rule: #ddddd8;
+    --code-bg: #f0f0eb;
+    --tag-get: #e8f0e8;
+    --tag-get-text: #2a5a2a;
+    --tag-post: #e8ecf5;
+    --tag-post-text: #1a3a6a;
+    --tag-component: #f0e8f5;
+    --tag-component-text: #4a1a6a;
+    --tag-feature: #e8f5f0;
+    --tag-feature-text: #1a5a4a;
+    --sidebar-w: 260px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; scroll-behavior: smooth; }
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--white);
+    color: var(--black);
+    line-height: 1.6;
+  }
+
+  /* ─── LAYOUT ─────────────────────────────────── */
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ─── SIDEBAR ────────────────────────────────── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--black);
+    color: var(--gray-200);
+    padding: 0 0 2rem 0;
+    z-index: 100;
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+  }
+
+  .sidebar-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #1c1c1c;
+    background: #101010;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .sidebar-btn {
+    border: 1px solid #2a2a2a;
+    background: #181818;
+    color: var(--gray-200);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0.35rem 0.45rem;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .sidebar-btn:hover { background: #222; }
+
+  .global-sidebar-toggle {
+    position: fixed;
+    left: 0.75rem;
+    top: 0.75rem;
+    z-index: 120;
+    border: 1px solid #2d2d2d;
+    background: #0f0f0f;
+    color: var(--white);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0.45rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    display: none;
+  }
+
+  .sidebar-logo {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid #222;
+    margin-bottom: 0.75rem;
+  }
+  .sidebar-logo .name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: 0.05em;
+  }
+  .sidebar-logo .sub {
+    font-size: 0.7rem;
+    color: var(--gray-400);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .sidebar-version {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    background: #222;
+    color: var(--gray-400);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 6px;
+  }
+
+  .nav-section {
+    padding: 0.25rem 0;
+  }
+  .nav-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #444;
+    padding: 0.8rem 1.5rem 0.3rem;
+    font-weight: 500;
+  }
+  .nav-link {
+    display: block;
+    padding: 0.35rem 1.5rem;
+    font-size: 0.8rem;
+    color: var(--gray-400);
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+    border-left: 2px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nav-link:hover, .nav-link.active {
+    color: var(--white);
+    background: #161616;
+    border-left-color: var(--white);
+  }
+
+  /* ─── MAIN CONTENT ───────────────────────────── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    max-width: none;
+    width: calc(100vw - var(--sidebar-w));
+    padding: 2rem 2rem;
+  }
+
+  /* ─── BACK BUTTON ────────────────────────────── */
+  .back-button {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    color: var(--black);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    text-decoration: none;
+    border-radius: 3px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .back-button:hover {
+    background: var(--gray-100);
+    border-color: var(--gray-400);
+  }
+
+  /* ─── SECTIONS ───────────────────────────────── */
+  .doc-section {
+    margin-bottom: 4rem;
+    padding-bottom: 3rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .doc-section:last-child { border-bottom: none; }
+
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+  h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--black);
+    letter-spacing: -0.01em;
+  }
+  h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem;
+    color: var(--black);
+  }
+  p {
+    margin-bottom: 0.75rem;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+  }
+  .lead {
+    font-size: 1rem;
+    color: var(--gray-600);
+    font-weight: 300;
+    line-height: 1.7;
+    border-left: 3px solid var(--black);
+    padding-left: 1rem;
+  }
+
+  /* ─── TECH STACK TABLE ───────────────────────── */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 1.5rem 0;
+    font-size: 0.82rem;
+  }
+  .stack-cell {
+    background: var(--white);
+    padding: 0.85rem 1rem;
+  }
+  .stack-cell .layer {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    margin-bottom: 3px;
+  }
+  .stack-cell .tech {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .stack-cell .purpose {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    margin-top: 2px;
+  }
+
+  /* ─── ROLE TABLE ─────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+    margin: 1.25rem 0;
+  }
+  th {
+    text-align: left;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--black);
+    font-weight: 500;
+  }
+  td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* ─── CODE BLOCK ─────────────────────────────── */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    margin: 0.75rem 0 1.25rem;
+    border-radius: 2px;
+  }
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82em;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    font-size: 1em;
+  }
+
+  /* ─── CARD ───────────────────────────────────– */
+  .card {
+    border: 1px solid var(--rule);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 2px;
+    background: var(--white);
+  }
+  .card:hover { background: #fafaf7; }
+  .card-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--black);
+  }
+  .card-desc {
+    font-size: 0.85rem;
+    color: var(--gray-600);
+    line-height: 1.5;
+  }
+  .card-footer {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--gray-400);
+  }
+
+  /* ─── BADGE ──────────────────────────────────– */
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    padding: 3px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    margin-right: 0.35rem;
+    margin-bottom: 0.35rem;
+  }
+  .badge.component { background: var(--tag-component); color: var(--tag-component-text); }
+  .badge.feature { background: var(--tag-feature); color: var(--tag-feature-text); }
+  .badge.page { background: var(--tag-post); color: var(--tag-post-text); }
+
+  /* ─── INFO BOXES ─────────────────────────────– */
+  .info-box {
+    border-left: 3px solid var(--black);
+    padding: 0.75rem 1rem;
+    background: var(--code-bg);
+    margin: 1rem 0;
+    font-size: 0.83rem;
+    color: var(--gray-600);
+  }
+  .info-box strong { color: var(--black); }
+
+  /* ─── OVERVIEW GRID ──────────────────────────– */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 1.5rem 0;
+  }
+  .overview-cell {
+    background: var(--white);
+    padding: 1rem 1.25rem;
+  }
+  .overview-cell .oc-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    margin-bottom: 4px;
+  }
+  .overview-cell .oc-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .overview-cell .oc-desc {
+    font-size: 0.77rem;
+    color: var(--gray-600);
+    margin-top: 3px;
+  }
+
+  /* ─── HEADER ─────────────────────────────────– */
+  .doc-header {
+    padding: 3rem 0 2.5rem;
+    border-bottom: 2px solid var(--black);
+    margin-bottom: 3rem;
+  }
+  .doc-header .badge-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .badge-row .badge {
+    border: 1px solid var(--gray-200);
+    color: var(--gray-600);
+    background: var(--white);
+  }
+  .badge.dark { background: var(--black); color: var(--white); border-color: var(--black); }
+
+  /* ─── FEATURE GRID ───────────────────────────– */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 1.5rem 0;
+  }
+  .feature-cell {
+    background: var(--white);
+    padding: 1rem;
+  }
+  .feature-cell .fc-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+  }
+  .feature-cell .fc-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+  .feature-cell .fc-desc {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    line-height: 1.4;
+  }
+
+  /* ─── LIST GRID ──────────────────────────────– */
+  .list-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .list-column h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+    color: var(--black);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0.4rem;
+  }
+  .list-column ul {
+    list-style: none;
+    margin-left: 0;
+  }
+  .list-column li {
+    font-size: 0.82rem;
+    padding: 0.35rem 0;
+    color: var(--gray-600);
+  }
+  .list-column li:before {
+    content: "→ ";
+    color: var(--gray-400);
+    margin-right: 0.35rem;
+    font-weight: 600;
+  }
+
+  /* ─── TABLET & MOBILE ────────────────────────– */
+  @media (max-width: 1199px) {
+    .sidebar { width: 220px; }
+    .main { margin-left: 220px; width: calc(100vw - 220px); padding: 1.75rem 1.5rem; }
+    .sidebar-logo { padding: 1rem 1.25rem 0.75rem; }
+    .stack-grid { grid-template-columns: repeat(2, 1fr); }
+    .features-grid { grid-template-columns: repeat(2, 1fr); }
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.1rem; margin: 2rem 0 0.85rem; }
+    .doc-header { padding: 2.5rem 0 2rem; }
+  }
+
+  @media (max-width: 860px) {
+    html { font-size: 14px; }
+    .main {
+      padding: 1.5rem 1rem;
+      margin-left: 0;
+      width: 100vw;
+    }
+    .sidebar {
+      width: min(85vw, 280px);
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 999;
+    }
+    body.sidebar-closed .sidebar { transform: translateX(-100%); }
+    body:not(.sidebar-closed) .sidebar { transform: translateX(0); }
+    .global-sidebar-toggle {
+      display: inline-block;
+      left: 0.5rem;
+      top: 0.5rem;
+      padding: 0.4rem 0.5rem;
+      font-size: 0.68rem;
+    }
+    .back-button {
+      top: 0.5rem;
+      right: 0.5rem;
+      font-size: 0.7rem;
+      padding: 0.35rem 0.5rem;
+      z-index: 50;
+    }
+    .sidebar-logo { padding: 0.75rem 1rem 0.5rem; }
+    .sidebar-logo .name { font-size: 0.9rem; }
+    .sidebar-logo .sub { font-size: 0.65rem; }
+    .sidebar-version { font-size: 0.6rem; margin-top: 4px; padding: 1px 4px; }
+    .nav-label { font-size: 0.58rem; padding: 0.6rem 1rem 0.25rem; }
+    .nav-link { font-size: 0.75rem; padding: 0.3rem 1rem; }
+    .stack-grid { grid-template-columns: 1fr; gap: 0; }
+    .stack-cell { padding: 0.7rem 0.8rem; }
+    .features-grid { grid-template-columns: 1fr; gap: 0; }
+    .feature-cell { padding: 0.75rem 0.8rem; }
+    .list-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+    h1 { font-size: 1.4rem; margin-bottom: 0.35rem; line-height: 1.15; }
+    h2 { font-size: 1rem; margin: 1.75rem 0 0.75rem; }
+    h3 { font-size: 0.9rem; margin: 1.25rem 0 0.4rem; }
+    p { font-size: 0.85rem; margin-bottom: 0.6rem; }
+    .lead { font-size: 0.9rem; padding-left: 0.75rem; }
+    .doc-header { padding: 1.75rem 0 1.5rem; margin-bottom: 2rem; }
+    .doc-section { margin-bottom: 2.5rem; padding-bottom: 2rem; }
+    .badge-row { gap: 0.35rem; margin-bottom: 0.75rem; }
+    .badge { font-size: 0.58rem; padding: 2px 5px; }
+    .card { padding: 0.75rem 0.85rem; margin-bottom: 0.75rem; }
+    .card-title { font-size: 0.82rem; margin-bottom: 0.35rem; }
+    .card-desc { font-size: 0.78rem; }
+    .info-box { padding: 0.6rem 0.8rem; margin: 0.8rem 0; font-size: 0.8rem; }
+    table { font-size: 0.78rem; margin: 1rem 0; }
+    table th { font-size: 0.6rem; padding: 0.4rem 0.5rem; }
+    table td { padding: 0.4rem 0.5rem; }
+    pre {
+      font-size: 0.72rem;
+      padding: 0.75rem 1rem;
+      margin: 0.6rem 0 1rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    ul { margin-left: 0.8rem; font-size: 0.85rem; }
+    li { margin-bottom: 0.4rem; }
+  }
+
+  @media (max-width: 480px) {
+    html { font-size: 13px; }
+    .main { padding: 1rem 0.75rem; }
+    .sidebar { width: min(90vw, 260px); }
+    .global-sidebar-toggle { left: 0.4rem; top: 0.4rem; padding: 0.3rem 0.4rem; font-size: 0.62rem; }
+    .back-button { top: 0.4rem; right: 0.4rem; font-size: 0.65rem; padding: 0.3rem 0.45rem; }
+    .sidebar-logo { padding: 0.6rem 0.9rem 0.4rem; }
+    .sidebar-logo .name { font-size: 0.8rem; }
+    .nav-label { font-size: 0.55rem; padding: 0.5rem 0.8rem 0.2rem; }
+    .nav-link { font-size: 0.7rem; padding: 0.25rem 0.8rem; }
+    h1 { font-size: 1.2rem; margin-bottom: 0.3rem; }
+    h2 { font-size: 0.95rem; margin: 1.5rem 0 0.65rem; }
+    h3 { font-size: 0.85rem; }
+    p { font-size: 0.8rem; margin-bottom: 0.5rem; }
+    .features-grid { grid-template-columns: 1fr; }
+    .feature-cell { padding: 0.65rem 0.7rem; }
+    .list-grid { gap: 0.6rem; }
+    .badge { font-size: 0.55rem; padding: 2px 4px; }
+    .card { padding: 0.6rem 0.7rem; margin-bottom: 0.6rem; }
+    .card-title { font-size: 0.78rem; }
+    .card-desc { font-size: 0.75rem; }
+    table { font-size: 0.73rem; margin: 0.8rem 0; }
+    pre { font-size: 0.68rem; padding: 0.65rem 0.8rem; }
+  }
+</style>
+</head>
+<body>
+<button class="global-sidebar-toggle" id="openSidebarBtn" title="Open sidebar navigation">NAV</button>
+<a href="index.html" class="back-button" title="Back to Backend API">← API Docs</a>
+<div class="layout">
+
+<!-- ───── SIDEBAR ───── -->
+<nav class="sidebar">
+  <div class="sidebar-controls">
+    <button class="sidebar-btn" id="closeSidebarBtn" title="Close sidebar">X</button>
+  </div>
+  <div class="sidebar-logo">
+    <div class="name">RISEFLAKE</div>
+    <div class="sub">Frontend</div>
+    <div class="sidebar-version">React / Vite</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-link" href="#intro">Introduction</a>
+    <a class="nav-link" href="#stack">Tech Stack</a>
+    <a class="nav-link" href="#routes">Routes & Pages</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Architecture</div>
+    <a class="nav-link" href="#components">Components</a>
+    <a class="nav-link" href="#state">State Management</a>
+    <a class="nav-link" href="#features">Features</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">User Types</div>
+    <a class="nav-link" href="#auth">Authentication</a>
+    <a class="nav-link" href="#user-routes">User Routes</a>
+    <a class="nav-link" href="#recruiter-routes">Recruiter Routes</a>
+    <a class="nav-link" href="#admin-routes">Admin Routes</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Reference</div>
+    <a class="nav-link" href="#public">Public Pages</a>
+    <a class="nav-link" href="#mobile">Mobile Responsive</a>
+  </div>
+</nav>
+
+<!-- ───── MAIN ───── -->
+<main class="main">
+
+  <!-- HEADER -->
+  <div class="doc-header" id="intro">
+    <div class="badge-row">
+      <span class="badge dark">Frontend Architecture</span>
+      <span class="badge">React 18</span>
+      <span class="badge">Vite</span>
+      <span class="badge">Redux Toolkit</span>
+    </div>
+    <h1>Frontend<br>Architecture & Components</h1>
+    <p class="lead">Modern React-based frontend for Riseflake job platform. Single-page application with role-based routing, real-time messaging, profile management, job search, and comprehensive admin dashboard.</p>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="doc-section" id="stack">
+    <h2>Tech Stack</h2>
+    <div class="stack-grid">
+      <div class="stack-cell"><div class="layer">UI Framework</div><div class="tech">React 18</div><div class="purpose">Component-based UI</div></div>
+      <div class="stack-cell"><div class="layer">Build Tool</div><div class="tech">Vite</div><div class="purpose">Fast dev server & bundling</div></div>
+      <div class="stack-cell"><div class="layer">State Mgmt</div><div class="tech">Redux Toolkit</div><div class="purpose">Global state & async thunks</div></div>
+      <div class="stack-cell"><div class="layer">Routing</div><div class="tech">React Router v6</div><div class="purpose">Client-side navigation & guards</div></div>
+      <div class="stack-cell"><div class="layer">Real-time</div><div class="tech">Socket.io Client</div><div class="purpose">Chat & live notifications</div></div>
+      <div class="stack-cell"><div class="layer">HTTP Client</div><div class="tech">Axios</div><div class="purpose">API requests with interceptors</div></div>
+      <div class="stack-cell"><div class="layer">File Upload</div><div class="tech">Dropzone / Sharp</div><div class="purpose">Image & resume upload</div></div>
+      <div class="stack-cell"><div class="layer">Authentication</div><div class="tech">JWT + OAuth</div><div class="purpose">Token-based auth (Google, LinkedIn, MS)</div></div>
+      <div class="stack-cell"><div class="layer">Styling</div><div class="tech">CSS3 + Tailwind</div><div class="purpose">Responsive design</div></div>
+    </div>
+
+    <h3>CSS Framework & Theming</h3>
+    <p><strong>Tailwind CSS</strong> for responsive utility-first styling with custom theme configuration. <strong>PostCSS</strong> for processing. Dark mode support across all pages. Mobile-first responsive design (breakpoints: xs, sm, md, lg, xl).</p>
+  </div>
+
+  <!-- ROUTES OVERVIEW -->
+  <div class="doc-section" id="routes">
+    <h2>Routes & Pages Overview</h2>
+
+    <h3>Public Routes (No Authentication)</h3>
+    <div class="info-box">
+      <strong>Accessible without login:</strong> Landing page, authentication pages, job listings, company/college profiles, legal pages, contact, assessments.
+    </div>
+
+    <div class="overview-grid">
+      <div class="overview-cell">
+        <div class="oc-label">Auth & Onboarding</div>
+        <div class="oc-path">/login, /register</div>
+        <div class="oc-desc">General user authentication</div>
+      </div>
+      <div class="overview-cell">
+        <div class="oc-label">Role-Specific Login</div>
+        <div class="oc-path">/login-recruiter, /login-company</div>
+        <div class="oc-desc">Recruiter & company auth</div>
+      </div>
+      <div class="overview-cell">
+        <div class="oc-label">OAuth Integration</div>
+        <div class="oc-path">/google-callback, /linkedin-callback</div>
+        <div class="oc-desc">Third-party auth flow</div>
+      </div>
+      <div class="overview-cell">
+        <div class="oc-label">Browse Jobs</div>
+        <div class="oc-path">/jobs, /jobs/:slug</div>
+        <div class="oc-desc">Job search & detail view</div>
+      </div>
+      <div class="overview-cell">
+        <div class="oc-label">Companies & Colleges</div>
+        <div class="oc-path">/companies, /colleges</div>
+        <div class="oc-desc">Browse organizations</div>
+      </div>
+      <div class="overview-cell">
+        <div class="oc-label">Information</div>
+        <div class="oc-path">/privacy-policy, /terms-of-service</div>
+        <div class="oc-desc">Legal & informational pages</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTHENTICATION & ROUTING GUARDS -->
+  <div class="doc-section" id="auth">
+    <h2>Authentication & Route Guards</h2>
+
+    <h3>Authentication Methods</h3>
+    <table>
+      <thead><tr><th>Method</th><th>Implementation</th><th>Usage</th></tr></thead>
+      <tbody>
+        <tr><td>Email/Password</td><td>JWT + HTTP-only Cookie</td><td>Standard login/register</td></tr>
+        <tr><td>Google OAuth</td><td>Firebase Auth / OAuth2</td><td>/google-callback route</td></tr>
+        <tr><td>LinkedIn OAuth</td><td>LinkedIn API</td><td>/linkedin-callback route</td></tr>
+        <tr><td>Microsoft OAuth</td><td>Microsoft Identity</td><td>/microsoft-callback route</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Route Protection Layers</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li><strong>CommonProtectRoute:</strong> Guards general user routes (requires auth token)</li>
+      <li><strong>RecruiterRoute:</strong> Guards recruiter-specific routes (checks recruiter role)</li>
+      <li><strong>ProtectAdminRoute:</strong> Guards admin dashboard (checks admin/sub-admin role)</li>
+      <li><strong>Role-Based Redirect:</strong> /home redirects to appropriate dashboard based on user role</li>
+    </ul>
+
+    <div class="info-box">
+      <strong>Token Management:</strong> JWT tokens stored in secure HTTP-only cookies. Access token refresh handled via interceptors. Logout clears all session data.
+    </div>
+  </div>
+
+  <!-- USER ROUTES -->
+  <div class="doc-section" id="user-routes">
+    <h2>User Routes (Authenticated)</h2>
+    <p>Routes accessible to regular users after authentication. Dashboard provides personalized experience with profile, settings, connections, and recommendations.</p>
+
+    <div class="list-grid">
+      <div class="list-column">
+        <h4>Core User Pages</h4>
+        <ul>
+          <li>/home - Role-based redirect</li>
+          <li>/user-home - User homepage</li>
+          <li>/my-profile - User profile view</li>
+          <li>/dashboard/profile - Edit profile</li>
+          <li>/dashboard/settings - Account settings</li>
+        </ul>
+      </div>
+      <div class="list-column">
+        <h4>Networking & Jobs</h4>
+        <ul>
+          <li>/network - View connections</li>
+          <li>/network/:username - User profile</li>
+          <li>/my-connections - Connection list</li>
+          <li>/chat - Real-time messaging</li>
+          <li>/jobs - Browse & apply</li>
+        </ul>
+      </div>
+      <div class="list-column">
+        <h4>Engagement & Learning</h4>
+        <ul>
+          <li>/top-mentors - Mentor discovery</li>
+          <li>/dashboard/courses - Learning resources</li>
+          <li>/dashboard/referrals - Referral program</li>
+          <li>/tests - Mock test listing</li>
+          <li>/puzzle-games - Gaming features</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECRUITER ROUTES -->
+  <div class="doc-section" id="recruiter-routes">
+    <h2>Recruiter Routes (Role-Specific)</h2>
+    <p>Specialized routes for recruiters to post jobs, manage applications, and track performance. All recruiter routes require RecruiterRoute guard.</p>
+
+    <div class="list-grid">
+      <div class="list-column">
+        <h4>Job Management</h4>
+        <ul>
+          <li>/recruiter-home - Dashboard</li>
+          <li>/dashboard/add-jobs - Post new job</li>
+          <li>/dashboard/manage-jobs - Job list</li>
+          <li>/dashboard/edit-job/:id - Edit job</li>
+        </ul>
+      </div>
+      <div class="list-column">
+        <h4>Analytics & Tracking</h4>
+        <ul>
+          <li>/job-dashboard/:jobSlug - Job metrics</li>
+          <li>Views, applications, engagement</li>
+          <li>Candidate responses tracking</li>
+          <li>Application status updates</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN ROUTES -->
+  <div class="doc-section" id="admin-routes">
+    <h2>Admin Routes (Admin Only)</h2>
+    <p>Comprehensive admin dashboard for system management, user moderation, analytics, and platform monitoring. All routes protected by ProtectAdminRoute guard.</p>
+
+    <div class="overview-grid">
+      <div class="overview-cell">
+        <div class="oc-label">User Management</div>
+        <div class="oc-path">/dashboard/manage-users</div>
+        <div class="oc-desc">View, search, filter users</div>
+      </div>
+      <div class="overview-cell">
+        <div class="oc-label">Content Moderation</div>
+        <div class="oc-path">/dashboard/admin-photo-approval</div>
+        <div class="oc-desc">Approve/reject photos</div>
+      </div>
+      <div class="overview-cell">
+        <div class="oc-label">Job Indexing</div>
+        <div class="oc-path">/dashboard/admin-manage-indexed-jobs</div>
+        <div class="oc-desc">Manage job board</div>
+      </div>
+      <div class="overview-cell">
+        <div class="oc-label">Monitoring</div>
+        <div class="oc-path">/dashboard/api-monitoring</div>
+        <div class="oc-desc">API health & stats</div>
+      </div>
+      <div class="overview-cell">
+        <div class="oc-label">Company Review</div>
+        <div class="oc-path">/dashboard/company-review</div>
+        <div class="oc-desc">Approve companies</div>
+      </div>
+      <div class="overview-cell">
+        <div class="oc-label">Email Logs</div>
+        <div class="oc-path">/dashboard/monitor-emails</div>
+        <div class="oc-desc">Email activity</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPONENTS -->
+  <div class="doc-section" id="components">
+    <h2>Component Architecture</h2>
+
+    <h3>Shared Components (Reusable Across App)</h3>
+    <div class="features-grid">
+      <div class="feature-cell">
+        <div class="fc-label">Navigation</div>
+        <div class="fc-name">Navbar, BottomNav</div>
+        <div class="fc-desc">Primary navigation (desktop) and mobile bottom navigation</div>
+      </div>
+      <div class="feature-cell">
+        <div class="fc-label">UI Elements</div>
+        <div class="fc-name">Modal, Loading, Button</div>
+        <div class="fc-desc">Generic modal wrapper, loading spinners, reusable buttons</div>
+      </div>
+      <div class="feature-cell">
+        <div class="fc-label">Authentication</div>
+        <div class="fc-name">ForceLoginModal, LoginModal</div>
+        <div class="fc-desc">Login prompts and auth forms</div>
+      </div>
+      <div class="feature-cell">
+        <div class="fc-label">Form Controls</div>
+        <div class="fc-name">Autocomplete, DatePicker</div>
+        <div class="fc-desc">Location, position, designation selectors</div>
+      </div>
+      <div class="feature-cell">
+        <div class="fc-label">File Upload</div>
+        <div class="fc-name">ProfilePhotoModal, ResumeModal</div>
+        <div class="fc-desc">Image crop & resume upload</div>
+      </div>
+      <div class="feature-cell">
+        <div class="fc-label">Feedback</div>
+        <div class="fc-name">ReportModal, NotificationModal</div>
+        <div class="fc-desc">User reports & notifications</div>
+      </div>
+    </div>
+
+    <h3>Feature-Specific Component Groups</h3>
+    <div class="list-grid">
+      <div class="list-column">
+        <h4>Job Features</h4>
+        <ul>
+          <li>AllJobsPage - Search & filter</li>
+          <li>JobPortalPage - Job board</li>
+          <li>MyJobsPage - Saved/applied jobs</li>
+          <li>JobDashboard - Recruiter analytics</li>
+          <li>ScreenCard, HiringCard - Job cards</li>
+        </ul>
+      </div>
+      <div class="list-column">
+        <h4>Profile & Networking</h4>
+        <ul>
+          <li>UserProfileForm - Edit profile</li>
+          <li>EducationForm - Add education</li>
+          <li>WorkExperienceForm - Career history</li>
+          <li>ProjectForm, CertificateForm - Portfolio</li>
+          <li>MyNetworkProfile - User profiles</li>
+        </ul>
+      </div>
+      <div class="list-column">
+        <h4>Communication</h4>
+        <ul>
+          <li>Chat/ - Chat UI components</li>
+          <li>ConnectionModal - Send requests</li>
+          <li>Message components - Text & images</li>
+          <li>Real-time event handlers</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATE MANAGEMENT -->
+  <div class="doc-section" id="state">
+    <h2>State Management (Redux Toolkit)</h2>
+
+    <h3>Redux Slices (Global State)</h3>
+    <table>
+      <thead><tr><th>Slice</th><th>Purpose</th><th>Key Thunks</th></tr></thead>
+      <tbody>
+        <tr><td>authSlice</td><td>Auth state & tokens</td><td>login, register, refresh, logout</td></tr>
+        <tr><td>userSlice</td><td>Current user data</td><td>fetchMe, googleAuth, updateProfile</td></tr>
+        <tr><td>jobSlice</td><td>Job listings & details</td><td>fetchJobs, fetchJobDetail, createJob, updateJob</td></tr>
+        <tr><td>chatSlice</td><td>Chat & messaging</td><td>fetchMessages, sendMessage, loadMore</td></tr>
+        <tr><td>connectionSlice</td><td>Networking</td><td>fetchConnections, sendRequest, acceptRequest</td></tr>
+        <tr><td>adminSlice</td><td>Admin data</td><td>fetchUsers, approvePhoto, fetchStats</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Context API Usage</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li><strong>AuthContext:</strong> Current user role, authentication status</li>
+      <li><strong>SocketContext:</strong> Socket.io instance & real-time events</li>
+      <li><strong>NotificationContext:</strong> Toast & notification messages</li>
+      <li><strong>ThemeContext:</strong> Light/dark mode preference</li>
+    </ul>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="doc-section" id="features">
+    <h2>Core Features</h2>
+
+    <h3>Job Search & Application</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li>Advanced search with filters (location, skills, salary, company, etc.)</li>
+      <li>One-click job application</li>
+      <li>Save/bookmark jobs</li>
+      <li>Job alerts & recommendations</li>
+      <li>View similar jobs</li>
+      <li>Track application status</li>
+    </ul>
+
+    <h3>Profile & Career Management</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li>Comprehensive profile builder (education, experience, skills, projects, certifications)</li>
+      <li>Profile completion tracking</li>
+      <li>Resume upload & management</li>
+      <li>Profile photo with approval workflow</li>
+      <li>Career goal & designation management</li>
+      <li>Public profile sharing</li>
+    </ul>
+
+    <h3>Real-Time Messaging</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li>Live chat with text & image support</li>
+      <li>Message history with pagination</li>
+      <li>Typing indicators</li>
+      <li>Read receipts</li>
+      <li>Chat notification badges</li>
+      <li>Block/unblock users</li>
+    </ul>
+
+    <h3>Networking & Connections</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li>Send connection requests</li>
+      <li>Accept/reject/block connections</li>
+      <li>View network suggestions</li>
+      <li>Browse mentor profiles</li>
+      <li>Network growth analytics</li>
+      <li>Recently joined users feed</li>
+    </ul>
+
+    <h3>Admin & Moderation</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li>User management & search</li>
+      <li>Photo approval queue</li>
+      <li>Company & college verification</li>
+      <li>Job indexing & approval</li>
+      <li>Chat monitoring</li>
+      <li>System monitoring (API, database, email)</li>
+      <li>Analytics & statistics dashboard</li>
+      <li>Sub-admin management</li>
+    </ul>
+
+    <h3>Assessments & Learning</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li>Mock test platform</li>
+      <li>Puzzle games</li>
+      <li>Data analyst assessment</li>
+      <li>Test scoring & results</li>
+      <li>Performance tracking</li>
+    </ul>
+  </div>
+
+  <!-- PUBLIC PAGES -->
+  <div class="doc-section" id="public">
+    <h2>Public Pages & Information</h2>
+
+    <h3>Legal & Informational</h3>
+    <table>
+      <thead><tr><th>Page</th><th>Route</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>Privacy Policy</td><td>/privacy-policy</td><td>Data handling & user privacy</td></tr>
+        <tr><td>Terms of Service</td><td>/terms-of-service</td><td>Usage agreement & legal terms</td></tr>
+        <tr><td>Contact</td><td>/contact</td><td>Support & inquiries</td></tr>
+        <tr><td>FAQ</td><td>/faq</td><td>Common questions & answers</td></tr>
+        <tr><td>About</td><td>/about</td><td>Company information</td></tr>
+        <tr><td>Careers</td><td>/careers</td><td>Job opportunities at Riseflake</td></tr>
+        <tr><td>Bug Bounty</td><td>/bug-bounty</td><td>Security vulnerability program</td></tr>
+        <tr><td>Fraud Alert</td><td>/fraud-alert</td><td>Scam awareness & protection</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Browsing Features</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li><strong>Job Search:</strong> /jobs with advanced filtering, sorting, pagination</li>
+      <li><strong>Companies:</strong> /companies directory with company profiles</li>
+      <li><strong>Colleges:</strong> /colleges directory with college information</li>
+      <li><strong>Public Job Posting:</strong> /post-job for quick job posting</li>
+      <li><strong>Indexed Jobs:</strong> /indexed-jobs for curated job board</li>
+    </ul>
+  </div>
+
+  <!-- MOBILE RESPONSIVENESS -->
+  <div class="doc-section" id="mobile">
+    <h2>Mobile Responsive Design</h2>
+
+    <h3>Breakpoints & Adaptation</h3>
+    <table>
+      <thead><tr><th>Size</th><th>Width</th><th>Adaptation</th></tr></thead>
+      <tbody>
+        <tr><td>Desktop</td><td>&gt; 1200px</td><td>Full layout with sidebar navigation</td></tr>
+        <tr><td>Tablet</td><td>860px - 1200px</td><td>Optimized spacing, 2-col grids</td></tr>
+        <tr><td>Mobile</td><td>481px - 860px</td><td>Bottom tab bar, full-width cards, 1-col layout</td></tr>
+        <tr><td>Small Mobile</td><td>&lt; 480px</td><td>Compact typography, touch-friendly buttons</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Mobile Optimizations</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li>Bottom navigation bar for primary actions</li>
+      <li>Full-width modal dialogs</li>
+      <li>Touch-friendly button sizing (min 44px)</li>
+      <li>Responsive typography scaling</li>
+      <li>Lazy loading for images</li>
+      <li>Optimized images for mobile bandwidth</li>
+      <li>No hover states on touch devices</li>
+      <li>Vertical scrolling optimized layouts</li>
+    </ul>
+
+    <div class="info-box">
+      <strong>Performance:</strong> Vite optimizes bundle splitting for faster mobile loading. Lazy-loaded routes with React.lazy(). Image optimization with responsive srcsets.
+    </div>
+  </div>
+
+  <!-- INTEGRATION POINTS -->
+  <div class="doc-section" id="integration">
+    <h2>Backend Integration</h2>
+
+    <h3>API Communication</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li><strong>Base URL:</strong> /api/v1 (backend URL)</li>
+      <li><strong>HTTP Client:</strong> Axios with interceptors</li>
+      <li><strong>Authentication:</strong> JWT in headers + HTTP-only cookies</li>
+      <li><strong>Error Handling:</strong> Interceptors for 401/403/500 errors</li>
+      <li><strong>Token Refresh:</strong> Automatic refresh on 401 response</li>
+    </ul>
+
+    <h3>Real-Time Communication</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li><strong>Socket.io:</strong> Real-time chat & notifications</li>
+      <li><strong>Events:</strong> message.send, message.receive, typing, online.status</li>
+      <li><strong>Reconnection:</strong> Auto-reconnect with exponential backoff</li>
+      <li><strong>Fallback:</strong> Polling if WebSocket unavailable</li>
+    </ul>
+
+    <h3>Third-Party Integrations</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li><strong>Firebase:</strong> Authentication, push notifications</li>
+      <li><strong>Google OAuth:</strong> OAuth login integration</li>
+      <li><strong>LinkedIn OAuth:</strong> Professional login</li>
+      <li><strong>Microsoft Identity:</strong> Enterprise login</li>
+    </ul>
+  </div>
+
+</main>
+</div>
+
+<script>
+  // Active nav highlighting
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(link => link.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -85% 0px' });
+  sections.forEach(s => observer.observe(s));
+
+  // Sidebar close/open controls
+  const body = document.body;
+  const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+  const openSidebarBtn = document.getElementById('openSidebarBtn');
+  if (closeSidebarBtn) {
+    closeSidebarBtn.addEventListener('click', () => body.classList.add('sidebar-closed'));
+  }
+  if (openSidebarBtn) {
+    openSidebarBtn.addEventListener('click', () => body.classList.remove('sidebar-closed'));
+  }
+</script>
+</body>
+</html>

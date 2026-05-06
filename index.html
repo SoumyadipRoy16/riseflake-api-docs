@@ -1,0 +1,2124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Riseflake — Backend API Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f5f0;
+    --gray-100: #e8e8e3;
+    --gray-200: #d0d0c8;
+    --gray-400: #8a8a80;
+    --gray-600: #555550;
+    --accent: #1a1a1a;
+    --rule: #ddddd8;
+    --code-bg: #f0f0eb;
+    --tag-get: #e8f0e8;
+    --tag-get-text: #2a5a2a;
+    --tag-post: #e8ecf5;
+    --tag-post-text: #1a3a6a;
+    --tag-patch: #f5f0e8;
+    --tag-patch-text: #6a4a1a;
+    --tag-delete: #f5e8e8;
+    --tag-delete-text: #6a1a1a;
+    --tag-put: #f0e8f5;
+    --tag-put-text: #4a1a6a;
+    --sidebar-w: 260px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 15px; scroll-behavior: smooth; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--white);
+    color: var(--black);
+    line-height: 1.6;
+  }
+
+  /* ─── LAYOUT ─────────────────────────────────── */
+  .layout {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ─── SIDEBAR ────────────────────────────────── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--black);
+    color: var(--gray-200);
+    padding: 0 0 2rem 0;
+    z-index: 100;
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+  }
+
+  .sidebar-logo {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid #222;
+    margin-bottom: 0.75rem;
+  }
+  .sidebar-logo .name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: 0.05em;
+  }
+  .sidebar-logo .sub {
+    font-size: 0.7rem;
+    color: var(--gray-400);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .sidebar-version {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    background: #222;
+    color: var(--gray-400);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 6px;
+  }
+
+  .nav-section {
+    padding: 0.25rem 0;
+  }
+  .nav-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #444;
+    padding: 0.8rem 1.5rem 0.3rem;
+    font-weight: 500;
+  }
+  .nav-link {
+    display: block;
+    padding: 0.35rem 1.5rem;
+    font-size: 0.8rem;
+    color: var(--gray-400);
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+    border-left: 2px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nav-link:hover, .nav-link.active {
+    color: var(--white);
+    background: #161616;
+    border-left-color: var(--white);
+  }
+
+  /* ─── MAIN CONTENT ───────────────────────────── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    max-width: 900px;
+    padding: 3rem 4rem;
+  }
+
+  /* ─── SECTIONS ───────────────────────────────── */
+  .doc-section {
+    margin-bottom: 4rem;
+    padding-bottom: 3rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .doc-section:last-child { border-bottom: none; }
+
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+  h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--black);
+    letter-spacing: -0.01em;
+  }
+  h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem;
+    color: var(--black);
+  }
+  p {
+    margin-bottom: 0.75rem;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+  }
+  .lead {
+    font-size: 1rem;
+    color: var(--gray-600);
+    font-weight: 300;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+    border-left: 3px solid var(--black);
+    padding-left: 1rem;
+  }
+
+  /* ─── TECH STACK TABLE ───────────────────────── */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 1.5rem 0;
+    font-size: 0.82rem;
+  }
+  .stack-cell {
+    background: var(--white);
+    padding: 0.85rem 1rem;
+  }
+  .stack-cell .layer {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    margin-bottom: 3px;
+  }
+  .stack-cell .tech {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .stack-cell .purpose {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    margin-top: 2px;
+  }
+
+  /* ─── ROLE TABLE ─────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+    margin: 1.25rem 0;
+  }
+  th {
+    text-align: left;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--black);
+    font-weight: 500;
+  }
+  td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* ─── CODE BLOCK ─────────────────────────────── */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    margin: 0.75rem 0 1.25rem;
+    border-radius: 2px;
+  }
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82em;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    font-size: 1em;
+  }
+
+  /* ─── ENDPOINT CARD ──────────────────────────── */
+  .endpoint {
+    border: 1px solid var(--rule);
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+  }
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    user-select: none;
+    background: var(--white);
+    transition: background 0.12s;
+  }
+  .endpoint-header:hover { background: #fafafa; }
+
+  .method {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+    min-width: 50px;
+    text-align: center;
+  }
+  .method.GET  { background: var(--tag-get);  color: var(--tag-get-text); }
+  .method.POST { background: var(--tag-post); color: var(--tag-post-text); }
+  .method.PATCH{ background: var(--tag-patch);color: var(--tag-patch-text); }
+  .method.DELETE{background: var(--tag-delete);color: var(--tag-delete-text); }
+  .method.PUT  { background: var(--tag-put);  color: var(--tag-put-text); }
+
+  .endpoint-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--black);
+    flex: 1;
+  }
+  .endpoint-desc {
+    font-size: 0.78rem;
+    color: var(--gray-400);
+  }
+  .auth-badge {
+    font-size: 0.62rem;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 2px 6px;
+    border: 1px solid var(--gray-200);
+    color: var(--gray-600);
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .auth-badge.required { border-color: var(--black); color: var(--black); }
+
+  .endpoint-body {
+    display: none;
+    padding: 1rem 1.25rem 1.25rem;
+    border-top: 1px solid var(--rule);
+    background: #fafaf7;
+  }
+  .endpoint-body.open { display: block; }
+
+  .param-table { width: 100%; font-size: 0.8rem; }
+  .param-table th {
+    font-size: 0.62rem;
+    border-bottom: 1px solid var(--rule);
+    padding: 0.4rem 0.5rem;
+  }
+  .param-table td {
+    padding: 0.45rem 0.5rem;
+    border-bottom: 1px solid #ececec;
+  }
+  .param-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; }
+  .req-badge {
+    font-size: 0.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 1px 4px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    color: var(--gray-600);
+    margin-left: 4px;
+  }
+  .req-badge.required { background: var(--black); color: var(--white); }
+
+  .section-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    margin: 1rem 0 0.4rem;
+    font-weight: 500;
+  }
+
+  /* ─── FLOW DIAGRAM (SVG) ─────────────────────── */
+  .diagram-wrap {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    padding: 2rem 1.5rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+
+  /* ─── INFO BOXES ─────────────────────────────── */
+  .info-box {
+    border-left: 3px solid var(--black);
+    padding: 0.75rem 1rem;
+    background: var(--code-bg);
+    margin: 1rem 0;
+    font-size: 0.83rem;
+    color: var(--gray-600);
+  }
+  .info-box strong { color: var(--black); }
+
+  /* ─── OVERVIEW GRID ──────────────────────────── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 1.5rem 0;
+  }
+  .overview-cell {
+    background: var(--white);
+    padding: 1rem 1.25rem;
+  }
+  .overview-cell .oc-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    margin-bottom: 4px;
+  }
+  .overview-cell .oc-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .overview-cell .oc-desc {
+    font-size: 0.77rem;
+    color: var(--gray-600);
+    margin-top: 3px;
+  }
+
+  /* ─── HEADER ─────────────────────────────────── */
+  .doc-header {
+    padding: 3rem 0 2.5rem;
+    border-bottom: 2px solid var(--black);
+    margin-bottom: 3rem;
+  }
+  .doc-header .badge-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border: 1px solid var(--gray-200);
+    color: var(--gray-600);
+    border-radius: 2px;
+  }
+  .badge.dark { background: var(--black); color: var(--white); border-color: var(--black); }
+
+  /* ─── TOGGLE ARROW ───────────────────────────── */
+  .toggle-arrow {
+    font-size: 0.7rem;
+    color: var(--gray-400);
+    margin-left: auto;
+    transition: transform 0.2s;
+  }
+  .endpoint-header.open .toggle-arrow { transform: rotate(180deg); }
+
+  @media (max-width: 860px) {
+    .main { padding: 2rem 1.5rem; }
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .stack-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ───── SIDEBAR ───── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="name">RISEFLAKE</div>
+    <div class="sub">API Reference</div>
+    <div class="sidebar-version">v1 · Node.js / Express</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-link" href="#overview">Introduction</a>
+    <a class="nav-link" href="#stack">Tech Stack</a>
+    <a class="nav-link" href="#architecture">Architecture</a>
+    <a class="nav-link" href="#auth-model">Authentication</a>
+    <a class="nav-link" href="#roles">Roles & RBAC</a>
+    <a class="nav-link" href="#errors">Error Codes</a>
+    <a class="nav-link" href="#base-url">Base URLs</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Endpoints</div>
+    <a class="nav-link" href="#ep-auth">Auth</a>
+    <a class="nav-link" href="#ep-users">Users</a>
+    <a class="nav-link" href="#ep-jobs">Jobs</a>
+    <a class="nav-link" href="#ep-applications">Applications</a>
+    <a class="nav-link" href="#ep-connections">Connections</a>
+    <a class="nav-link" href="#ep-messages">Messages</a>
+    <a class="nav-link" href="#ep-subscriptions">Subscriptions</a>
+    <a class="nav-link" href="#ep-password">Password</a>
+    <a class="nav-link" href="#ep-sessions">Sessions</a>
+    <a class="nav-link" href="#ep-profile">Profile Modules</a>
+    <a class="nav-link" href="#ep-admin">Admin</a>
+    <a class="nav-link" href="#ep-monitoring">Monitoring</a>
+    <a class="nav-link" href="#ep-misc">Master Data</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Reference</div>
+    <a class="nav-link" href="#websockets">WebSockets</a>
+    <a class="nav-link" href="#env">Environment Vars</a>
+    <a class="nav-link" href="#setup">Setup Guide</a>
+  </div>
+</nav>
+
+<!-- ───── MAIN ───── -->
+<main class="main">
+
+  <!-- HEADER -->
+  <div class="doc-header" id="overview">
+    <div class="badge-row">
+      <span class="badge dark">REST API</span>
+      <span class="badge">v1</span>
+      <span class="badge">Node.js 18+</span>
+      <span class="badge">PostgreSQL</span>
+      <span class="badge">Socket.IO</span>
+    </div>
+    <h1>Riseflake<br>Backend API</h1>
+    <p class="lead">A comprehensive job-platform backend powering authentication, job postings, applications, real-time messaging, subscriptions, and admin analytics. All endpoints live under <code>/api/v1</code>.</p>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="doc-section" id="stack">
+    <h2>Tech Stack</h2>
+    <div class="stack-grid">
+      <div class="stack-cell"><div class="layer">Runtime</div><div class="tech">Node.js 18+</div><div class="purpose">JavaScript runtime</div></div>
+      <div class="stack-cell"><div class="layer">Framework</div><div class="tech">Express.js 4</div><div class="purpose">HTTP routing & middleware</div></div>
+      <div class="stack-cell"><div class="layer">Primary DB</div><div class="tech">PostgreSQL</div><div class="purpose">Relational data (pg pool)</div></div>
+      <div class="stack-cell"><div class="layer">Secondary DB</div><div class="tech">MongoDB</div><div class="purpose">Message storage (Mongoose)</div></div>
+      <div class="stack-cell"><div class="layer">Cache / PubSub</div><div class="tech">Redis (ioredis)</div><div class="purpose">Sessions, rate limiting, Socket.IO adapter</div></div>
+      <div class="stack-cell"><div class="layer">Real-time</div><div class="tech">Socket.IO 4</div><div class="purpose">Chat & live notifications</div></div>
+      <div class="stack-cell"><div class="layer">Authentication</div><div class="tech">JWT + HTTP-only Cookie</div><div class="purpose">Stateless auth tokens</div></div>
+      <div class="stack-cell"><div class="layer">File Storage</div><div class="tech">AWS S3 / R2</div><div class="purpose">Profile photos, resumes</div></div>
+      <div class="stack-cell"><div class="layer">Payments</div><div class="tech">Razorpay</div><div class="purpose">Subscription billing</div></div>
+      <div class="stack-cell"><div class="layer">AI</div><div class="tech">Gemini API</div><div class="purpose">Job description generation</div></div>
+      <div class="stack-cell"><div class="layer">Push Notifications</div><div class="tech">Firebase FCM</div><div class="purpose">Mobile push</div></div>
+      <div class="stack-cell"><div class="layer">Metrics</div><div class="tech">Prometheus (prom-client)</div><div class="purpose">API observability</div></div>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="doc-section" id="architecture">
+    <h2>Architecture & Request Lifecycle</h2>
+    <p>The project follows a layered MVC pattern. Every HTTP request passes through the following pipeline:</p>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 740 90" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace" font-size="11">
+        <!-- boxes -->
+        <rect x="0" y="20" width="90" height="50" fill="#0a0a0a" rx="2"/>
+        <text x="45" y="41" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">HTTP</text>
+        <text x="45" y="55" fill="#888" text-anchor="middle" font-size="8">Request</text>
+        <text x="45" y="67" fill="#888" text-anchor="middle" font-size="8">Server.js</text>
+
+        <rect x="120" y="20" width="90" height="50" fill="#1a1a1a" rx="2"/>
+        <text x="165" y="41" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">ROUTER</text>
+        <text x="165" y="55" fill="#888" text-anchor="middle" font-size="8">api/v1/</text>
+        <text x="165" y="67" fill="#888" text-anchor="middle" font-size="8">routes/</text>
+
+        <rect x="240" y="20" width="110" height="50" fill="#1a1a1a" rx="2"/>
+        <text x="295" y="41" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">MIDDLEWARE</text>
+        <text x="295" y="55" fill="#888" text-anchor="middle" font-size="8">auth · rate-limit</text>
+        <text x="295" y="67" fill="#888" text-anchor="middle" font-size="8">validation</text>
+
+        <rect x="380" y="20" width="100" height="50" fill="#1a1a1a" rx="2"/>
+        <text x="430" y="41" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">CONTROLLER</text>
+        <text x="430" y="55" fill="#888" text-anchor="middle" font-size="8">business</text>
+        <text x="430" y="67" fill="#888" text-anchor="middle" font-size="8">logic</text>
+
+        <rect x="510" y="20" width="90" height="50" fill="#1a1a1a" rx="2"/>
+        <text x="555" y="41" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">MODEL</text>
+        <text x="555" y="55" fill="#888" text-anchor="middle" font-size="8">SQL queries</text>
+        <text x="555" y="67" fill="#888" text-anchor="middle" font-size="8">pg / mongoose</text>
+
+        <rect x="630" y="20" width="90" height="50" fill="#0a0a0a" rx="2"/>
+        <text x="675" y="41" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">DATABASE</text>
+        <text x="675" y="55" fill="#888" text-anchor="middle" font-size="8">PostgreSQL</text>
+        <text x="675" y="67" fill="#888" text-anchor="middle" font-size="8">MongoDB</text>
+
+        <!-- arrows -->
+        <line x1="90" y1="45" x2="120" y2="45" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="210" y1="45" x2="240" y2="45" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="350" y1="45" x2="380" y2="45" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="480" y1="45" x2="510" y2="45" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="600" y1="45" x2="630" y2="45" stroke="#555" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <defs>
+          <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <h3>Project Structure</h3>
+    <pre>backend-riseflake/
+├── Server.js                    # Entry point, Socket.IO, cron jobs
+├── api/
+│   ├── v1/
+│   │   ├── index.js             # Route mounting for all v1 endpoints
+│   │   ├── controllers/         # Business logic handlers
+│   │   ├── routes/              # Express router definitions
+│   │   ├── middlewares/         # Auth, rate-limit, monitoring
+│   │   └── validations/         # Input validation rules
+│   └── v2/                      # Newer controller versions
+└── shared/
+    ├── models/                  # PostgreSQL models (raw SQL)
+    └── utils/                   # DB, JWT, email, OTP, S3, Redis</pre>
+  </div>
+
+  <!-- AUTH MODEL -->
+  <div class="doc-section" id="auth-model">
+    <h2>Authentication</h2>
+    <p>Authentication uses <strong>JWT tokens stored in signed HTTP-only cookies</strong>. The middleware reads the cookie automatically on every protected request.</p>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 680 160" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace" font-size="10">
+        <!-- Login flow -->
+        <rect x="0" y="10" width="120" height="36" fill="#0a0a0a" rx="2"/>
+        <text x="60" y="30" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">POST /auth/login</text>
+        <text x="60" y="42" fill="#666" text-anchor="middle" font-size="8">email + password</text>
+
+        <rect x="160" y="10" width="130" height="36" fill="#1a1a1a" rx="2"/>
+        <text x="225" y="26" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">Validate credentials</text>
+        <text x="225" y="40" fill="#666" text-anchor="middle" font-size="8">bcrypt verify password</text>
+
+        <rect x="330" y="10" width="130" height="36" fill="#1a1a1a" rx="2"/>
+        <text x="395" y="26" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">Issue JWT</text>
+        <text x="395" y="40" fill="#666" text-anchor="middle" font-size="8">Set HTTP-only cookie</text>
+
+        <rect x="500" y="10" width="130" height="36" fill="#0a0a0a" rx="2"/>
+        <text x="565" y="26" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">Response</text>
+        <text x="565" y="40" fill="#666" text-anchor="middle" font-size="8">user object + session</text>
+
+        <!-- arrows row 1 -->
+        <line x1="120" y1="28" x2="160" y2="28" stroke="#444" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="290" y1="28" x2="330" y2="28" stroke="#444" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="460" y1="28" x2="500" y2="28" stroke="#444" stroke-width="1.5" marker-end="url(#a2)"/>
+
+        <!-- Subsequent request flow -->
+        <text x="0" y="85" fill="#555" font-size="8" letter-spacing="0.08em">SUBSEQUENT REQUESTS</text>
+        <rect x="0" y="95" width="130" height="36" fill="#0a0a0a" rx="2"/>
+        <text x="65" y="111" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">Request + Cookie</text>
+        <text x="65" y="123" fill="#666" text-anchor="middle" font-size="8">JWT auto-sent by browser</text>
+
+        <rect x="170" y="95" width="140" height="36" fill="#1a1a1a" rx="2"/>
+        <text x="240" y="111" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">authenticateUser</text>
+        <text x="240" y="123" fill="#666" text-anchor="middle" font-size="8">verify JWT, load req.user</text>
+
+        <rect x="350" y="95" width="130" height="36" fill="#1a1a1a" rx="2"/>
+        <text x="415" y="111" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">userAuthorizationHandler</text>
+        <text x="415" y="123" fill="#666" text-anchor="middle" font-size="8">check role(s)</text>
+
+        <rect x="520" y="95" width="130" height="36" fill="#0a0a0a" rx="2"/>
+        <text x="585" y="111" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">Controller</text>
+        <text x="585" y="123" fill="#666" text-anchor="middle" font-size="8">handle request</text>
+
+        <line x1="130" y1="113" x2="170" y2="113" stroke="#444" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="310" y1="113" x2="350" y2="113" stroke="#444" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="480" y1="113" x2="520" y2="113" stroke="#444" stroke-width="1.5" marker-end="url(#a2)"/>
+
+        <defs>
+          <marker id="a2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#444"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="info-box">
+      <strong>Token refresh:</strong> Tokens are refreshed via <code>POST /auth/refresh</code> using the existing cookie. On logout, the cookie is cleared and the session is invalidated in PostgreSQL.
+    </div>
+
+    <h3>OAuth Providers</h3>
+    <p>Google, LinkedIn, and Microsoft OAuth are supported. Admin accounts (roles 1, 6) cannot authenticate via OAuth.</p>
+
+    <table>
+      <thead><tr><th>Provider</th><th>Endpoint</th><th>Required Fields</th></tr></thead>
+      <tbody>
+        <tr><td>Google</td><td><code>POST /auth/google</code></td><td>email, google_uid</td></tr>
+        <tr><td>LinkedIn</td><td><code>POST /auth/linkedin</code></td><td>email, linkedin_uid</td></tr>
+        <tr><td>Microsoft</td><td><code>POST /auth/microsoft</code></td><td>email, microsoft_uid</td></tr>
+        <tr><td>Google (Recruiter)</td><td><code>POST /auth/google-recruiter</code></td><td>email, google_uid</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ROLES -->
+  <div class="doc-section" id="roles">
+    <h2>Roles & Access Control</h2>
+    <p>Every user has a numeric <code>role</code> stored in the <code>users</code> table. <code>userAuthorizationHandler(role1, role2, ...)</code> guards routes.</p>
+    <table>
+      <thead><tr><th>Role</th><th>Name</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Admin</td><td>Full platform access — users, jobs, subscriptions, analytics</td></tr>
+        <tr><td>2</td><td>Recruiter</td><td>Create & manage job postings, view applications for own jobs</td></tr>
+        <tr><td>3</td><td>Candidate / Applicant</td><td>Browse jobs, apply, manage profile</td></tr>
+        <tr><td>4</td><td>College</td><td>College institution account with bulk registration capabilities</td></tr>
+        <tr><td>5</td><td>Mentor</td><td>Mentor profile access</td></tr>
+        <tr><td>6</td><td>Sub-Admin</td><td>Admin-level read access + limited write permissions</td></tr>
+      </tbody>
+    </table>
+    <div class="info-box">
+      Routes marked <strong>Admin only</strong> require role 1 or 6. Routes marked <strong>Recruiter</strong> require role 2. Most profile/application routes are role 3 (candidate).
+    </div>
+  </div>
+
+  <!-- ERRORS -->
+  <div class="doc-section" id="errors">
+    <h2>Standard Error Responses</h2>
+    <p>All endpoints return JSON. Errors follow a consistent shape:</p>
+    <pre>{
+  "status": false,
+  "message": "Human-readable error description"
+}</pre>
+    <table>
+      <thead><tr><th>HTTP Code</th><th>Meaning</th><th>Common Cause</th></tr></thead>
+      <tbody>
+        <tr><td>400</td><td>Bad Request</td><td>Missing or invalid request body / query parameters</td></tr>
+        <tr><td>401</td><td>Unauthorized</td><td>Missing or expired JWT cookie</td></tr>
+        <tr><td>403</td><td>Forbidden</td><td>Authenticated but insufficient role</td></tr>
+        <tr><td>404</td><td>Not Found</td><td>Resource with given ID/slug does not exist</td></tr>
+        <tr><td>409</td><td>Conflict</td><td>Duplicate email, mobile number, or resource</td></tr>
+        <tr><td>429</td><td>Too Many Requests</td><td>Rate limiter triggered (express-rate-limit + Redis)</td></tr>
+        <tr><td>500</td><td>Internal Server Error</td><td>Unhandled exception — check server logs</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- BASE URLS -->
+  <div class="doc-section" id="base-url">
+    <h2>Base URLs</h2>
+    <table>
+      <thead><tr><th>Environment</th><th>Base URL</th></tr></thead>
+      <tbody>
+        <tr><td>Production</td><td><code>https://riseflake.com/api/v1</code></td></tr>
+        <tr><td>Preview</td><td><code>https://preview.riseflake.com/api/v1</code></td></tr>
+        <tr><td>Local Dev</td><td><code>http://localhost:3000/api/v1</code></td></tr>
+      </tbody>
+    </table>
+    <div class="info-box">The <strong>X-Client-Platform</strong> header is read by <code>clientPlatform</code> middleware to identify the calling client (web / mobile / admin). Include it where relevant.</div>
+  </div>
+
+  <!-- ══════════════════════════════════ ENDPOINTS ══════════════════════════════════ -->
+
+  <!-- AUTH -->
+  <div class="doc-section" id="ep-auth">
+    <h2>Auth  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /auth</small></h2>
+    <p>Registration, login, OAuth, and account lifecycle management.</p>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/auth/register</span>
+        <span class="endpoint-desc">Register new applicant (role 3)</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <table class="param-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>email<span class="req-badge required">required</span></td><td>string (email)</td><td>Unique</td></tr>
+            <tr><td>password<span class="req-badge required">required</span></td><td>string</td><td>Min 8 chars</td></tr>
+            <tr><td>full_name<span class="req-badge required">required</span></td><td>string</td><td></td></tr>
+            <tr><td>gender<span class="req-badge">optional</span></td><td>string</td><td></td></tr>
+            <tr><td>mobile_no<span class="req-badge">optional</span></td><td>string</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "message": "User registered successfully" }</pre>
+        <div class="section-label">Error Codes</div>
+        <p>400 Validation error · 409 Email/mobile already registered · 500 Server error</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/auth/register-recruiter</span>
+        <span class="endpoint-desc">Register recruiter (role 2)</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <table class="param-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>email<span class="req-badge required">required</span></td><td>string</td><td></td></tr>
+            <tr><td>password<span class="req-badge required">required</span></td><td>string</td><td></td></tr>
+            <tr><td>full_name<span class="req-badge required">required</span></td><td>string</td><td></td></tr>
+            <tr><td>mobile_no<span class="req-badge">optional</span></td><td>string</td><td></td></tr>
+            <tr><td>work_location_id<span class="req-badge">optional</span></td><td>integer</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "message": "Recruiter registered successfully" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/auth/login</span>
+        <span class="endpoint-desc">Email/password login — sets JWT cookie</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <table class="param-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>email<span class="req-badge required">required</span></td><td>string</td><td></td></tr>
+            <tr><td>password<span class="req-badge required">required</span></td><td>string</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "message": "Login successful", "user": { "id": 1, "email": "...", "role": 3, "full_name": "..." } }</pre>
+        <div class="section-label">Sets Cookie</div>
+        <p>HTTP-only signed cookie containing JWT token. All subsequent authenticated requests use this cookie automatically.</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/auth/logout</span>
+        <span class="endpoint-desc">Log out — clears cookie, ends session</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "message": "Logged out", "sessionTerminated": true }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/auth/me</span>
+        <span class="endpoint-desc">Get full profile of authenticated user</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "platform": "web", "result": {
+  "id": 1, "email": "user@example.com", "full_name": "Jane Doe",
+  "role": 3, "profile_photo_url": "...", "ac_status": 1,
+  "profile": {...}, "skills": [...], "work_experiences": [...],
+  "educations": [...], "certificates": [...], "projects": [...], "settings": {...}
+}}</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/auth/refresh</span>
+        <span class="endpoint-desc">Refresh JWT token using existing cookie</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>No request body required. Returns a refreshed JWT token via cookie.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/auth/hibernate</span>
+        <span class="endpoint-desc">Temporarily suspend own account (role 3 only)</span>
+        <span class="auth-badge required">auth · role 3</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Sets <code>ac_status = 2</code>. All active sessions are terminated.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/auth/delete</span>
+        <span class="endpoint-desc">Permanently delete own account (role 3 only)</span>
+        <span class="auth-badge required">auth · role 3</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Irreversible. Sets <code>ac_status = 3</code>. All sessions terminated.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/auth/status</span>
+        <span class="endpoint-desc">Update own account status (role 3 only)</span>
+        <span class="auth-badge required">auth · role 3</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <table class="param-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>ac_status<span class="req-badge required">required</span></td><td>integer</td><td>1=Active, 2=Hibernated, 3=Deleted</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/auth/check-email</span>
+        <span class="endpoint-desc">Check email availability before registration</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "email": "user@example.com" }</pre>
+        <div class="section-label">Response</div>
+        <p>200 Available · 409 Already registered</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/auth/check-mobile</span>
+        <span class="endpoint-desc">Check mobile number availability</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "mobile_no": "+919876543210" }</pre>
+        <div class="section-label">Response</div>
+        <p>200 Available · 409 Already registered</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/auth/register-college</span>
+        <span class="endpoint-desc">Register college institution (role 4)</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Required Fields</div>
+        <p>email, password, full_name — same shape as recruiter registration.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div class="doc-section" id="ep-users">
+    <h2>Users  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /users</small></h2>
+    <p>All routes require authentication. Base path: <code>/api/v1/users</code></p>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/users/search</span>
+        <span class="endpoint-desc">Search users by name/username</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Query Params</div>
+        <table class="param-table">
+          <thead><tr><th>Param</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>q</td><td>string</td><td>Search term</td></tr>
+            <tr><td>page</td><td>integer</td><td>Default 1</td></tr>
+            <tr><td>limit</td><td>integer</td><td>Default 20</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/users/me</span>
+        <span class="endpoint-desc">Get current user basic details</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Returns authenticated user object.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/users/update</span>
+        <span class="endpoint-desc">Update user basic info (name, gender, etc.)</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body (partial update)</div>
+        <pre>{ "full_name": "Jane Doe", "gender": "female" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/users/update-password</span>
+        <span class="endpoint-desc">Change own password</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "current_password": "old123", "new_password": "new456", "confirm_password": "new456" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/users/update-resume</span>
+        <span class="endpoint-desc">Upload / update resume file</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request</div>
+        <p>Multipart form-data. Field: <code>resume</code> (PDF). Stored in AWS S3/R2.</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/users/profile-settings</span>
+        <span class="endpoint-desc">Get user privacy/notification settings</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Returns user preference flags (email notifications, visibility, etc.).</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/users/profile-settings</span>
+        <span class="endpoint-desc">Update user privacy/notification settings</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>PATCH body contains only the fields being updated.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/users/add-mobile-number</span>
+        <span class="endpoint-desc">Add / change mobile number (sends OTP)</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "mobile_no": "+919876543210" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/users/update-mobile-verification</span>
+        <span class="endpoint-desc">Verify mobile OTP</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "otp": "123456" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/users/batch-delete</span>
+        <span class="endpoint-desc">Bulk delete users (admin only)</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "user_ids": [1, 2, 3] }</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- JOBS -->
+  <div class="doc-section" id="ep-jobs">
+    <h2>Jobs  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /jobs</small></h2>
+    <p>Job creation is a two-step process. Step 1 creates the job, Step 2 adds additional details.</p>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/jobs/step1</span>
+        <span class="endpoint-desc">Create job — step 1 (basic info)</span>
+        <span class="auth-badge required">auth · recruiter</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <table class="param-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>title<span class="req-badge required">required</span></td><td>string</td><td>Job title</td></tr>
+            <tr><td>category_id<span class="req-badge required">required</span></td><td>integer</td><td>From /categories</td></tr>
+            <tr><td>job_type<span class="req-badge required">required</span></td><td>string</td><td>full-time / part-time / internship / freelance</td></tr>
+            <tr><td>work_mode<span class="req-badge required">required</span></td><td>string</td><td>remote / hybrid / onsite</td></tr>
+            <tr><td>location_id<span class="req-badge">optional</span></td><td>integer</td><td></td></tr>
+            <tr><td>salary_min<span class="req-badge">optional</span></td><td>number</td><td></td></tr>
+            <tr><td>salary_max<span class="req-badge">optional</span></td><td>number</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "job_id": 42 }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/jobs/:id/step2</span>
+        <span class="endpoint-desc">Update job — step 2 (description, requirements)</span>
+        <span class="auth-badge required">auth · recruiter</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "description": "...", "requirements": "...", "skills": [1,2,3], "facilities": [4,5] }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/jobs/generate-description</span>
+        <span class="endpoint-desc">AI-generated job description (Gemini)</span>
+        <span class="auth-badge required">auth · recruiter</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "title": "Senior Backend Engineer", "skills": ["Node.js", "PostgreSQL"], "job_type": "full-time" }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "description": "Generated job description text..." }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/jobs/my-jobs</span>
+        <span class="endpoint-desc">List own job postings (recruiter)</span>
+        <span class="auth-badge required">auth · recruiter</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Query Params</div>
+        <table class="param-table">
+          <thead><tr><th>Param</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>page</td><td>integer</td><td>Default 1</td></tr>
+            <tr><td>limit</td><td>integer</td><td>Default 20</td></tr>
+            <tr><td>status</td><td>string</td><td>active / closed / draft</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/jobs/review</span>
+        <span class="endpoint-desc">Jobs pending admin review</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Returns paginated list of jobs awaiting approval.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/jobs/recently-viewed</span>
+        <span class="endpoint-desc">Get recently viewed jobs for current user</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Returns last 10 jobs viewed by the authenticated user.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/jobs/featured-internships</span>
+        <span class="endpoint-desc">Get featured internship listings</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Public endpoint. Returns featured/promoted internship jobs.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/jobs/:id/status</span>
+        <span class="endpoint-desc">Update job status (active / closed / draft)</span>
+        <span class="auth-badge required">auth · recruiter/admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "status": "closed" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/jobs/batch/status</span>
+        <span class="endpoint-desc">Bulk update job statuses</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "job_ids": [1, 2, 3], "status": "closed" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/jobs/:id/increment-views</span>
+        <span class="endpoint-desc">Track job view count</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Increments view counter for the given job. Called when a job detail page is loaded.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/jobs/report-job</span>
+        <span class="endpoint-desc">Report a job posting</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "job_id": 5, "reason": "spam" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/jobs/:id/application-settings</span>
+        <span class="endpoint-desc">Get application settings for a job</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Returns per-job application limits and configuration.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/jobs/:slug/settings</span>
+        <span class="endpoint-desc">Get job settings by slug</span>
+        <span class="auth-badge required">auth · recruiter</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Returns editable settings for a recruiter's job.</p></div>
+    </div>
+  </div>
+
+  <!-- APPLICATIONS -->
+  <div class="doc-section" id="ep-applications">
+    <h2>Applications  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /application</small></h2>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/application/apply</span>
+        <span class="endpoint-desc">Apply to a job</span>
+        <span class="auth-badge required">auth · role 3</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "job_id": 42, "cover_letter": "I am interested because..." }</pre>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "message": "Application submitted", "application_id": 99 }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/application/applicant-jobs</span>
+        <span class="endpoint-desc">Get jobs I have applied to</span>
+        <span class="auth-badge required">auth · role 3</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Query Params</div>
+        <table class="param-table">
+          <thead><tr><th>Param</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>status</td><td>string</td><td>pending / accepted / rejected</td></tr>
+            <tr><td>page</td><td>integer</td><td>Default 1</td></tr>
+            <tr><td>limit</td><td>integer</td><td>Default 20</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/application/recruiter-jobs</span>
+        <span class="endpoint-desc">Get applications for recruiter's jobs</span>
+        <span class="auth-badge required">auth · role 2</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Query Params</div>
+        <p>job_id · status · page · limit</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/application/:id/status</span>
+        <span class="endpoint-desc">Update application status (recruiter)</span>
+        <span class="auth-badge required">auth · role 2</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "status": "accepted" }   // "accepted" | "rejected" | "pending"</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECTIONS -->
+  <div class="doc-section" id="ep-connections">
+    <h2>Connections  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /connections</small></h2>
+    <p>Professional network connections between users. All routes require authentication.</p>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/connections/send-request</span>
+        <span class="endpoint-desc">Send connection request to a user</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "username": "john_doe" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/connections/status/:username</span>
+        <span class="endpoint-desc">Get connection status with a user</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "connection_status": "pending" }  // none | pending | accepted | blocked</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/connections/received</span>
+        <span class="endpoint-desc">Get pending incoming connection requests</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Returns list of users who sent connection requests to me.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/connections/accepted</span>
+        <span class="endpoint-desc">List accepted connections (my network)</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Supports pagination via <code>page</code> and <code>limit</code> query params.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/connections/sent</span>
+        <span class="endpoint-desc">List sent (pending) connection requests</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/connections/:connection_id/status</span>
+        <span class="endpoint-desc">Accept or reject a connection request</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "status": "accepted" }  // "accepted" | "rejected"</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/connections/:connection_id</span>
+        <span class="endpoint-desc">Remove an existing connection</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/connections/block</span>
+        <span class="endpoint-desc">Block a user</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "blocked_user_id": 55 }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/connections/unblock/:blocked_user_id</span>
+        <span class="endpoint-desc">Unblock a user</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/connections/batch-status</span>
+        <span class="endpoint-desc">Get connection status for multiple users at once</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "usernames": ["alice", "bob", "carol"] }</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="doc-section" id="ep-messages">
+    <h2>Messages  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /messages</small></h2>
+    <p>Real-time messaging stored in MongoDB. All routes require authentication. Live delivery via Socket.IO.</p>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/messages/users</span>
+        <span class="endpoint-desc">Get chat users (inbox list)</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Returns list of users the current user has conversations with, ordered by latest message.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/messages/:userId</span>
+        <span class="endpoint-desc">Get messages with a specific user</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Query Params</div>
+        <p>page · limit (cursor-based pagination)</p>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "messages": [{ "id": "...", "content": "...", "sender_id": 1, "created_at": "..." }] }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/messages/:userId/send</span>
+        <span class="endpoint-desc">Send a message (text or image)</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body (JSON, max 6MB)</div>
+        <pre>{ "content": "Hello there!", "type": "text" }
+// or for image:
+{ "image": "&lt;base64&gt;", "type": "image" }</pre>
+        <div class="section-label">Notes</div>
+        <p>Message is delivered live via Socket.IO event <code>new_message</code> to connected recipients.</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/messages/:messageId/seen</span>
+        <span class="endpoint-desc">Mark a message as read</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/messages/:messageId</span>
+        <span class="endpoint-desc">Delete a sent message</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/messages/unread/count</span>
+        <span class="endpoint-desc">Get total unread message count</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "status": true, "unread_count": 7 }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/messages/search</span>
+        <span class="endpoint-desc">Search users available to chat</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Query param: <code>q</code> (search term). Returns only users who can be messaged (connected / subscription allows).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBSCRIPTIONS -->
+  <div class="doc-section" id="ep-subscriptions">
+    <h2>Subscriptions  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /subscription</small></h2>
+    <p>Subscription management via Razorpay. All routes require authentication.</p>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/subscription/plans</span>
+        <span class="endpoint-desc">List all available subscription plans</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "plans": [{ "id": 1, "name": "Pro", "price": 999, "duration_days": 30, "features": {...} }] }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/subscription/my-plan</span>
+        <span class="endpoint-desc">Get current user's active subscription</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "status": true, "plan": { "name": "Pro", "expires_at": "2025-08-01", "is_active": true } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/subscription/create-order</span>
+        <span class="endpoint-desc">Create Razorpay payment order</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "plan_id": 2 }</pre>
+        <div class="section-label">Response</div>
+        <pre>{ "status": true, "order": { "id": "order_xxx", "amount": 99900, "currency": "INR" } }</pre>
+        <p style="margin-top:0.5rem">Use the returned <code>order.id</code> with Razorpay.js on the frontend to open the payment modal.</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/subscription/create</span>
+        <span class="endpoint-desc">Confirm subscription after payment</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "razorpay_payment_id": "pay_xxx", "razorpay_order_id": "order_xxx", "razorpay_signature": "sig_xxx", "plan_id": 2 }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/subscription/cancel</span>
+        <span class="endpoint-desc">Cancel active subscription</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/subscription/pause</span>
+        <span class="endpoint-desc">Pause active subscription</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/subscription/resume</span>
+        <span class="endpoint-desc">Resume paused subscription</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/subscription/transactions</span>
+        <span class="endpoint-desc">Get payment transaction history</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Returns paginated list of past payment transactions.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/subscription/check-view</span>
+        <span class="endpoint-desc">Check if user can view a profile (quota check)</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "target_user_id": 99 }</pre>
+        <pre>{ "status": true, "can_view": true, "views_remaining": 14 }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/subscription/webhook</span>
+        <span class="endpoint-desc">Razorpay webhook handler</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="info-box"><strong>Server-to-server only.</strong> This endpoint is called by Razorpay to confirm payment events. Do not call from client.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASSWORD -->
+  <div class="doc-section" id="ep-password">
+    <h2>Password  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /password</small></h2>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/password/forgot-password</span>
+        <span class="endpoint-desc">Send password reset email</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "email": "user@example.com" }</pre>
+        <div class="section-label">Notes</div>
+        <p>Sends a time-limited reset link via Nodemailer. Token is stored in DB.</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/password/validate-reset-token/:token</span>
+        <span class="endpoint-desc">Validate a password reset token</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "status": true, "valid": true, "email": "user@example.com" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/password/reset-password</span>
+        <span class="endpoint-desc">Set new password using reset token</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "token": "reset_token_here", "new_password": "newpass123", "confirm_password": "newpass123" }</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- SESSIONS -->
+  <div class="doc-section" id="ep-sessions">
+    <h2>Sessions  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /sessions</small></h2>
+    <p>Manage login sessions across devices. Sessions are cleaned up nightly via cron (90-day TTL).</p>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/sessions</span>
+        <span class="endpoint-desc">List all active sessions for current user</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "status": true, "sessions": [{ "id": "...", "device": "Chrome / Windows", "ip": "...", "created_at": "...", "is_current": true }] }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/sessions/:id</span>
+        <span class="endpoint-desc">Terminate a specific session</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/sessions/all</span>
+        <span class="endpoint-desc">Terminate all sessions except current</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/sessions/device-token</span>
+        <span class="endpoint-desc">Register Firebase FCM device token</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <pre>{ "device_token": "fcm_token_here", "platform": "android" }</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE MODULES -->
+  <div class="doc-section" id="ep-profile">
+    <h2>Profile Modules</h2>
+    <p>Each sub-section below corresponds to a discrete part of the user profile. All require authentication.</p>
+
+    <h3>Profile Photo  <code style="font-size:0.8rem">/profile-photo</code></h3>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/profile-photo/upload</span>
+        <span class="endpoint-desc">Upload new profile photo</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Multipart form-data. Field: <code>photo</code>. Image is resized via Sharp before storing to S3/R2.</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/profile-photo/remove</span>
+        <span class="endpoint-desc">Remove profile photo</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"></div>
+    </div>
+
+    <h3 style="margin-top:2rem">Education  <code style="font-size:0.8rem">/education</code></h3>
+    <p>Full CRUD for education entries on a user profile.</p>
+
+    <div class="overview-grid">
+      <div class="overview-cell"><div class="oc-label">Add</div><div class="oc-path">POST /education</div><div class="oc-desc">Add education entry</div></div>
+      <div class="overview-cell"><div class="oc-label">List</div><div class="oc-path">GET /education</div><div class="oc-desc">Get all education entries</div></div>
+      <div class="overview-cell"><div class="oc-label">Update</div><div class="oc-path">PATCH /education/:id</div><div class="oc-desc">Update an entry</div></div>
+      <div class="overview-cell"><div class="oc-label">Delete</div><div class="oc-path">DELETE /education/:id</div><div class="oc-desc">Remove an entry</div></div>
+    </div>
+
+    <h3 style="margin-top:1.5rem">Work Experience  <code style="font-size:0.8rem">/work-experience</code></h3>
+    <div class="overview-grid">
+      <div class="overview-cell"><div class="oc-label">Add</div><div class="oc-path">POST /work-experience</div><div class="oc-desc">Add work experience</div></div>
+      <div class="overview-cell"><div class="oc-label">List</div><div class="oc-path">GET /work-experience</div><div class="oc-desc">List all experiences</div></div>
+      <div class="overview-cell"><div class="oc-label">Update</div><div class="oc-path">PATCH /work-experience/:id</div><div class="oc-desc">Update experience</div></div>
+      <div class="overview-cell"><div class="oc-label">Delete</div><div class="oc-path">DELETE /work-experience/:id</div><div class="oc-desc">Remove experience</div></div>
+    </div>
+
+    <h3 style="margin-top:1.5rem">Skills  <code style="font-size:0.8rem">/skills</code></h3>
+    <div class="overview-grid">
+      <div class="overview-cell"><div class="oc-label">List</div><div class="oc-path">GET /skills</div><div class="oc-desc">All available skills</div></div>
+      <div class="overview-cell"><div class="oc-label">Search</div><div class="oc-path">GET /skills/search?q=</div><div class="oc-desc">Search skills</div></div>
+      <div class="overview-cell"><div class="oc-label">Add to profile</div><div class="oc-path">POST /skills/user</div><div class="oc-desc">Add skill to own profile</div></div>
+      <div class="overview-cell"><div class="oc-label">Remove</div><div class="oc-path">DELETE /skills/user/:id</div><div class="oc-desc">Remove skill from profile</div></div>
+    </div>
+
+    <h3 style="margin-top:1.5rem">Certificates  <code style="font-size:0.8rem">/certificates</code></h3>
+    <div class="overview-grid">
+      <div class="overview-cell"><div class="oc-label">Add</div><div class="oc-path">POST /certificates</div><div class="oc-desc">Add certificate</div></div>
+      <div class="overview-cell"><div class="oc-label">List</div><div class="oc-path">GET /certificates</div><div class="oc-desc">Get all certificates</div></div>
+      <div class="overview-cell"><div class="oc-label">Update</div><div class="oc-path">PATCH /certificates/:id</div><div class="oc-desc">Update certificate</div></div>
+      <div class="overview-cell"><div class="oc-label">Delete</div><div class="oc-path">DELETE /certificates/:id</div><div class="oc-desc">Remove certificate</div></div>
+    </div>
+
+    <h3 style="margin-top:1.5rem">Projects  <code style="font-size:0.8rem">/projects</code></h3>
+    <div class="overview-grid">
+      <div class="overview-cell"><div class="oc-label">Add</div><div class="oc-path">POST /projects</div><div class="oc-desc">Add project</div></div>
+      <div class="overview-cell"><div class="oc-label">List</div><div class="oc-path">GET /projects</div><div class="oc-desc">List all projects</div></div>
+      <div class="overview-cell"><div class="oc-label">Update</div><div class="oc-path">PATCH /projects/:id</div><div class="oc-desc">Update project</div></div>
+      <div class="overview-cell"><div class="oc-label">Delete</div><div class="oc-path">DELETE /projects/:id</div><div class="oc-desc">Remove project</div></div>
+    </div>
+
+    <h3 style="margin-top:1.5rem">Recruiter Profile  <code style="font-size:0.8rem">/recruiter-profile</code></h3>
+    <div class="overview-grid">
+      <div class="overview-cell"><div class="oc-label">Get</div><div class="oc-path">GET /recruiter-profile</div><div class="oc-desc">Get own recruiter profile</div></div>
+      <div class="overview-cell"><div class="oc-label">Create/Update</div><div class="oc-path">PATCH /recruiter-profile</div><div class="oc-desc">Upsert recruiter profile</div></div>
+    </div>
+
+    <h3 style="margin-top:1.5rem">User Profile (Candidate)  <code style="font-size:0.8rem">/user-profile</code></h3>
+    <div class="overview-grid">
+      <div class="overview-cell"><div class="oc-label">Get</div><div class="oc-path">GET /user-profile</div><div class="oc-desc">Get own candidate profile</div></div>
+      <div class="overview-cell"><div class="oc-label">Get by username</div><div class="oc-path">GET /user-profile/:username</div><div class="oc-desc">View another user's profile</div></div>
+      <div class="overview-cell"><div class="oc-label">Update</div><div class="oc-path">PATCH /user-profile</div><div class="oc-desc">Update profile fields</div></div>
+      <div class="overview-cell"><div class="oc-label">Completion</div><div class="oc-path">GET /user-profile/completion</div><div class="oc-desc">Get profile completion %</div></div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="doc-section" id="ep-admin">
+    <h2>Admin  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /admin  · roles 1, 6</small></h2>
+    <p>All admin routes require authentication and role 1 (Admin) or role 6 (Sub-Admin).</p>
+
+    <div class="overview-grid">
+      <div class="overview-cell"><div class="oc-label">Dashboard</div><div class="oc-path">GET /admin/info</div><div class="oc-desc">Platform-wide stats summary</div></div>
+      <div class="overview-cell"><div class="oc-label">Users</div><div class="oc-path">GET /admin/users</div><div class="oc-desc">List all users (paginated)</div></div>
+      <div class="overview-cell"><div class="oc-label">User Detail</div><div class="oc-path">GET /admin/users/:id</div><div class="oc-desc">Full user detail + audit</div></div>
+      <div class="overview-cell"><div class="oc-label">User Status</div><div class="oc-path">PATCH /admin/users/:id/status</div><div class="oc-desc">Activate / ban user</div></div>
+      <div class="overview-cell"><div class="oc-label">Jobs</div><div class="oc-path">GET /admin/jobs</div><div class="oc-desc">All jobs with filters</div></div>
+      <div class="overview-cell"><div class="oc-label">Job Review</div><div class="oc-path">PATCH /admin/jobs/:id/process-status</div><div class="oc-desc">Approve / reject job</div></div>
+      <div class="overview-cell"><div class="oc-label">Subscriptions</div><div class="oc-path">GET /admin/subscriptions</div><div class="oc-desc">All subscriptions</div></div>
+      <div class="overview-cell"><div class="oc-label">Revenue</div><div class="oc-path">GET /admin/revenue</div><div class="oc-desc">Payment & revenue stats</div></div>
+      <div class="overview-cell"><div class="oc-label">Email Logs</div><div class="oc-path">GET /admin/email-logs</div><div class="oc-desc">Outbound email history</div></div>
+      <div class="overview-cell"><div class="oc-label">Sub-Admins</div><div class="oc-path">GET /admin/sub-admins</div><div class="oc-desc">Manage sub-admin users</div></div>
+      <div class="overview-cell"><div class="oc-label">Create Sub-Admin</div><div class="oc-path">POST /admin/sub-admins</div><div class="oc-desc">Add sub-admin user</div></div>
+      <div class="overview-cell"><div class="oc-label">Delete Sub-Admin</div><div class="oc-path">DELETE /admin/sub-admins/:id</div><div class="oc-desc">Remove sub-admin</div></div>
+    </div>
+  </div>
+
+  <!-- MONITORING -->
+  <div class="doc-section" id="ep-monitoring">
+    <h2>Monitoring  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  admin only</small></h2>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/metrics</span>
+        <span class="endpoint-desc">Prometheus metrics (admin only)</span>
+        <span class="auth-badge required">admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Prometheus-format metrics for scraping. Tracked by <code>prom-client</code>.</p></div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/monitoring</span>
+        <span class="endpoint-desc">Live API stats (paginated)</span>
+        <span class="auth-badge required">admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Query Params</div>
+        <pre>?page=1&amp;limit=100</pre>
+        <p>Returns per-endpoint hit counts, latency, error rates tracked in memory.</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/monitoring/historic</span>
+        <span class="endpoint-desc">Historical API stats over a date range</span>
+        <span class="auth-badge required">admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Query Params</div>
+        <table class="param-table">
+          <thead><tr><th>Param</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>from</td><td>string</td><td>YYYY-MM-DD, default -29 days</td></tr>
+            <tr><td>to</td><td>string</td><td>YYYY-MM-DD, default today</td></tr>
+            <tr><td>page / limit</td><td>integer</td><td>Pagination for endpoint stats</td></tr>
+            <tr><td>logPage / logLimit</td><td>integer</td><td>Pagination for request logs</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/db-monitoring</span>
+        <span class="endpoint-desc">Database health & connection pool stats</span>
+        <span class="auth-badge required">admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body"><p>Returns PostgreSQL pool stats, active connections, slow query info.</p></div>
+    </div>
+  </div>
+
+  <!-- MASTER DATA -->
+  <div class="doc-section" id="ep-misc">
+    <h2>Master Data & Utilities</h2>
+    <p>Reference data endpoints — most are read-only and lightly cached.</p>
+
+    <div class="overview-grid">
+      <div class="overview-cell"><div class="oc-label">Categories</div><div class="oc-path">GET /categories</div><div class="oc-desc">All job categories</div></div>
+      <div class="overview-cell"><div class="oc-label">Category Search</div><div class="oc-path">GET /categories/search?q=</div><div class="oc-desc">Search categories</div></div>
+      <div class="overview-cell"><div class="oc-label">Facilities</div><div class="oc-path">GET /facilities</div><div class="oc-desc">Job benefits/perks list</div></div>
+      <div class="overview-cell"><div class="oc-label">Locations</div><div class="oc-path">GET /locations</div><div class="oc-desc">City/location list</div></div>
+      <div class="overview-cell"><div class="oc-label">Designations</div><div class="oc-path">GET /designation-career-goals</div><div class="oc-desc">Role & career goal options</div></div>
+      <div class="overview-cell"><div class="oc-label">Positions</div><div class="oc-path">GET /positions</div><div class="oc-desc">Seniority position list</div></div>
+      <div class="overview-cell"><div class="oc-label">Colleges</div><div class="oc-path">GET /colleges</div><div class="oc-desc">Institution list</div></div>
+      <div class="overview-cell"><div class="oc-label">Combined Search</div><div class="oc-path">GET /combined/search?q=</div><div class="oc-desc">Cross-entity search</div></div>
+      <div class="overview-cell"><div class="oc-label">Notifications</div><div class="oc-path">GET /notify</div><div class="oc-desc">User notifications</div></div>
+      <div class="overview-cell"><div class="oc-label">My Network</div><div class="oc-path">GET /mynetwork</div><div class="oc-desc">People you may know</div></div>
+      <div class="overview-cell"><div class="oc-label">Homepage Jobs</div><div class="oc-path">GET /homepage-jobcards</div><div class="oc-desc">Featured job cards</div></div>
+      <div class="overview-cell"><div class="oc-label">Homepage Content</div><div class="oc-path">GET /homepage-content</div><div class="oc-desc">CMS content for homepage</div></div>
+    </div>
+  </div>
+
+  <!-- WEBSOCKETS -->
+  <div class="doc-section" id="websockets">
+    <h2>WebSocket Events</h2>
+    <p>The server uses Socket.IO 4 with a Redis adapter for horizontal scalability. Connect to the server root with your JWT cookie present.</p>
+
+    <table>
+      <thead><tr><th>Event</th><th>Direction</th><th>Payload</th></tr></thead>
+      <tbody>
+        <tr><td>new_message</td><td>Server → Client</td><td><code>{ message_id, sender_id, content, created_at }</code></td></tr>
+        <tr><td>message_seen</td><td>Server → Client</td><td><code>{ message_id, seen_by }</code></td></tr>
+        <tr><td>message_deleted</td><td>Server → Client</td><td><code>{ message_id }</code></td></tr>
+        <tr><td>connection_request</td><td>Server → Client</td><td><code>{ from_user, connection_id }</code></td></tr>
+        <tr><td>connection_accepted</td><td>Server → Client</td><td><code>{ connection_id }</code></td></tr>
+        <tr><td>notification</td><td>Server → Client</td><td><code>{ type, payload }</code></td></tr>
+        <tr><td>typing</td><td>Client → Server</td><td><code>{ to_user_id, is_typing }</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ENV VARS -->
+  <div class="doc-section" id="env">
+    <h2>Environment Variables</h2>
+    <pre># Server
+PORT=3000
+NODE_ENV=production
+
+# PostgreSQL
+PG_HOST=localhost
+PG_PORT=5432
+PG_DATABASE=riseflake_db
+PG_USER=your_user
+PG_PASSWORD=your_password
+
+# MongoDB
+MONGODB_URI=mongodb+srv://...
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Auth
+JWT_SECRET=your_jwt_secret
+COOKIE_SECRET=your_cookie_secret
+COOKIE_NAME=rf_session
+
+# AWS S3 / Cloudflare R2
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=
+S3_BUCKET_NAME=
+R2_ENDPOINT=
+R2_BUCKET_NAME=
+
+# Payments
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+
+# AI
+GEMINI_API_KEY=
+
+# Firebase
+FIREBASE_SERVICE_ACCOUNT_JSON=
+
+# Email (SMTP)
+SMTP_HOST=
+SMTP_PORT=465
+SMTP_USER=
+SMTP_PASS=
+
+# Client URLs (CORS)
+CLIENT_URL=https://riseflake.com</pre>
+  </div>
+
+  <!-- SETUP -->
+  <div class="doc-section" id="setup">
+    <h2>Setup Guide</h2>
+
+    <h3>Prerequisites</h3>
+    <p>Node.js 18+, PostgreSQL 14+, MongoDB, Redis</p>
+
+    <h3>1. Install</h3>
+    <pre>git clone &lt;repository-url&gt;
+cd backend-riseflake
+npm install</pre>
+
+    <h3>2. Configure</h3>
+    <pre>cp .env.example .env
+# Edit .env with your credentials</pre>
+
+    <h3>3. Initialize Database</h3>
+    <pre>node shared/models/init.js</pre>
+
+    <h3>4. Run</h3>
+    <pre># Development
+npm run dev
+
+# Production
+npm start</pre>
+
+    <div class="info-box">
+      <strong>Cron jobs</strong> run automatically on server start: session cleanup daily at 3:00 AM, and top-profiles snapshot every hour.
+    </div>
+
+    <h3>Scheduled Tasks</h3>
+    <table>
+      <thead><tr><th>Schedule</th><th>Task</th></tr></thead>
+      <tbody>
+        <tr><td><code>0 3 * * *</code></td><td>Delete sessions older than 90 days</td></tr>
+        <tr><td><code>0 * * * *</code></td><td>Sync top-profiles snapshot to cache</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+</div>
+
+<script>
+  function toggle(header) {
+    const body = header.nextElementSibling;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    header.classList.toggle('open', !isOpen);
+  }
+
+  // Active nav highlighting
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -85% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

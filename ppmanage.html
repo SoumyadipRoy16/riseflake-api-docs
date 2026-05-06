@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile Photo Management — Riseflake Backend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f5f0;
+    --gray-100: #e8e8e3;
+    --gray-200: #d0d0c8;
+    --gray-400: #8a8a80;
+    --gray-600: #555550;
+    --accent: #1a1a1a;
+    --rule: #ddddd8;
+    --code-bg: #f0f0eb;
+    --tag-get: #e8f0e8;
+    --tag-get-text: #2a5a2a;
+    --tag-post: #e8ecf5;
+    --tag-post-text: #1a3a6a;
+    --tag-patch: #f5f0e8;
+    --tag-patch-text: #6a4a1a;
+    --tag-delete: #f5e8e8;
+    --tag-delete-text: #6a1a1a;
+    --tag-put: #f0e8f5;
+    --tag-put-text: #4a1a6a;
+    --sidebar-w: 260px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; scroll-behavior: smooth; }
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--white);
+    color: var(--black);
+    line-height: 1.6;
+  }
+
+  /* ─── LAYOUT ─────────────────────────────────── */
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ─── SIDEBAR ────────────────────────────────── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--black);
+    color: var(--gray-200);
+    padding: 0 0 2rem 0;
+    z-index: 100;
+    scrollbar-width: thin;
+    scrollbar-color: #333 transparent;
+  }
+
+  .sidebar-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #1c1c1c;
+    background: #101010;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .sidebar-btn {
+    border: 1px solid #2a2a2a;
+    background: #181818;
+    color: var(--gray-200);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0.35rem 0.45rem;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .sidebar-btn:hover { background: #222; }
+
+  .global-sidebar-toggle {
+    position: fixed;
+    left: 0.75rem;
+    top: 0.75rem;
+    z-index: 120;
+    border: 1px solid #2d2d2d;
+    background: #0f0f0f;
+    color: var(--white);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    line-height: 1;
+    padding: 0.45rem 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    display: none;
+  }
+
+  .sidebar-logo {
+    padding: 1.5rem 1.5rem 1rem;
+    border-bottom: 1px solid #222;
+    margin-bottom: 0.75rem;
+  }
+  .sidebar-logo .name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+    letter-spacing: 0.05em;
+  }
+  .sidebar-logo .sub {
+    font-size: 0.7rem;
+    color: var(--gray-400);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .sidebar-version {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    background: #222;
+    color: var(--gray-400);
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-top: 6px;
+  }
+
+  .nav-section {
+    padding: 0.25rem 0;
+  }
+  .nav-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #444;
+    padding: 0.8rem 1.5rem 0.3rem;
+    font-weight: 500;
+  }
+  .nav-link {
+    display: block;
+    padding: 0.35rem 1.5rem;
+    font-size: 0.8rem;
+    color: var(--gray-400);
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+    border-left: 2px solid transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .nav-link:hover, .nav-link.active {
+    color: var(--white);
+    background: #161616;
+    border-left-color: var(--white);
+  }
+
+  /* ─── MAIN CONTENT ───────────────────────────── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    max-width: none;
+    width: calc(100vw - var(--sidebar-w));
+    padding: 2rem 2rem;
+  }
+
+  /* ─── BACK BUTTON ────────────────────────────── */
+  .back-button {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 50;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    color: var(--black);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    text-decoration: none;
+    border-radius: 3px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .back-button:hover {
+    background: var(--gray-100);
+    border-color: var(--gray-400);
+  }
+
+  /* ─── SECTIONS ───────────────────────────────── */
+  .doc-section {
+    margin-bottom: 4rem;
+    padding-bottom: 3rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .doc-section:last-child { border-bottom: none; }
+
+  h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+  h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--black);
+    letter-spacing: -0.01em;
+  }
+  h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem;
+    color: var(--black);
+  }
+  p {
+    margin-bottom: 0.75rem;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+  }
+  .lead {
+    font-size: 1rem;
+    color: var(--gray-600);
+    font-weight: 300;
+    line-height: 1.7;
+    border-left: 3px solid var(--black);
+    padding-left: 1rem;
+  }
+
+  /* ─── TECH STACK TABLE ───────────────────────── */
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 1.5rem 0;
+    font-size: 0.82rem;
+  }
+  .stack-cell {
+    background: var(--white);
+    padding: 0.85rem 1rem;
+  }
+  .stack-cell .layer {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    margin-bottom: 3px;
+  }
+  .stack-cell .tech {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .stack-cell .purpose {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    margin-top: 2px;
+  }
+
+  /* ─── ROLE TABLE ─────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+    margin: 1.25rem 0;
+  }
+  th {
+    text-align: left;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    padding: 0.5rem 0.75rem;
+    border-bottom: 2px solid var(--black);
+    font-weight: 500;
+  }
+  td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td:first-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* ─── CODE BLOCK ─────────────────────────────── */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    margin: 0.75rem 0 1.25rem;
+    border-radius: 2px;
+  }
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82em;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    font-size: 1em;
+  }
+
+  /* ─── ENDPOINT CARD ──────────────────────────── */
+  .endpoint {
+    border: 1px solid var(--rule);
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+  }
+  .endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    user-select: none;
+    background: var(--white);
+    transition: background 0.12s;
+  }
+  .endpoint-header:hover { background: #fafafa; }
+
+  .method {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+    min-width: 50px;
+    text-align: center;
+  }
+  .method.GET  { background: var(--tag-get);  color: var(--tag-get-text); }
+  .method.POST { background: var(--tag-post); color: var(--tag-post-text); }
+  .method.PATCH{ background: var(--tag-patch);color: var(--tag-patch-text); }
+  .method.DELETE{background: var(--tag-delete);color: var(--tag-delete-text); }
+
+  .endpoint-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--black);
+    flex: 1;
+  }
+  .endpoint-desc {
+    font-size: 0.78rem;
+    color: var(--gray-400);
+  }
+  .auth-badge {
+    font-size: 0.62rem;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 2px 6px;
+    border: 1px solid var(--gray-200);
+    color: var(--gray-600);
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+  .auth-badge.required { border-color: var(--black); color: var(--black); }
+
+  .endpoint-body {
+    display: none;
+    padding: 1rem 1.25rem 1.25rem;
+    border-top: 1px solid var(--rule);
+    background: #fafaf7;
+  }
+  .endpoint-body.open { display: block; }
+
+  .param-table { width: 100%; font-size: 0.8rem; }
+  .param-table th {
+    font-size: 0.62rem;
+    border-bottom: 1px solid var(--rule);
+    padding: 0.4rem 0.5rem;
+  }
+  .param-table td {
+    padding: 0.45rem 0.5rem;
+    border-bottom: 1px solid #ececec;
+  }
+  .param-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; }
+  .req-badge {
+    font-size: 0.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 1px 4px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    color: var(--gray-600);
+    margin-left: 4px;
+  }
+  .req-badge.required { background: var(--black); color: var(--white); }
+
+  .section-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    margin: 1rem 0 0.4rem;
+    font-weight: 500;
+  }
+
+  /* ─── FLOW DIAGRAM (SVG) ─────────────────────── */
+  .diagram-wrap {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    padding: 2rem 1.5rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+
+  /* ─── INFO BOXES ─────────────────────────────── */
+  .info-box {
+    border-left: 3px solid var(--black);
+    padding: 0.75rem 1rem;
+    background: var(--code-bg);
+    margin: 1rem 0;
+    font-size: 0.83rem;
+    color: var(--gray-600);
+  }
+  .info-box strong { color: var(--black); }
+
+  /* ─── OVERVIEW GRID ──────────────────────────── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin: 1.5rem 0;
+  }
+  .overview-cell {
+    background: var(--white);
+    padding: 1rem 1.25rem;
+  }
+  .overview-cell .oc-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gray-400);
+    margin-bottom: 4px;
+  }
+  .overview-cell .oc-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .overview-cell .oc-desc {
+    font-size: 0.77rem;
+    color: var(--gray-600);
+    margin-top: 3px;
+  }
+
+  /* ─── HEADER ─────────────────────────────────── */
+  .doc-header {
+    padding: 3rem 0 2.5rem;
+    border-bottom: 2px solid var(--black);
+    margin-bottom: 3rem;
+  }
+  .doc-header .badge-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    padding: 3px 8px;
+    border: 1px solid var(--gray-200);
+    color: var(--gray-600);
+    border-radius: 2px;
+  }
+  .badge.dark { background: var(--black); color: var(--white); border-color: var(--black); }
+
+  /* ─── TOGGLE ARROW ───────────────────────────── */
+  .toggle-arrow {
+    font-size: 0.7rem;
+    color: var(--gray-400);
+    margin-left: auto;
+    transition: transform 0.2s;
+  }
+  .endpoint-header.open .toggle-arrow { transform: rotate(180deg); }
+
+  body.sidebar-closed .sidebar { display: none; }
+  body.sidebar-closed .main {
+    margin-left: 0;
+    width: 100vw;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+  body.sidebar-closed .global-sidebar-toggle { display: inline-block; }
+
+  @media (max-width: 860px) {
+    .main { padding: 2rem 1.5rem; }
+    .sidebar { display: block; width: min(86vw, 320px); }
+    body.sidebar-closed .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .stack-grid { grid-template-columns: repeat(2, 1fr); }
+    .global-sidebar-toggle { display: inline-block; }
+    body.sidebar-closed .main { padding-left: 1rem; padding-right: 1rem; }
+    .back-button { top: 0.5rem; right: 0.5rem; font-size: 0.75rem; padding: 0.4rem 0.6rem; }
+  }
+</style>
+</head>
+<body>
+<button class="global-sidebar-toggle" id="openSidebarBtn" title="Open sidebar navigation">NAV</button>
+<a href="index.html" class="back-button" title="Back to API Documentation">← API Docs</a>
+<div class="layout">
+
+<!-- ───── SIDEBAR ───── -->
+<nav class="sidebar">
+  <div class="sidebar-controls">
+    <button class="sidebar-btn" id="closeSidebarBtn" title="Close sidebar">X</button>
+  </div>
+  <div class="sidebar-logo">
+    <div class="name">RISEFLAKE</div>
+    <div class="sub">Profile Photo</div>
+    <div class="sidebar-version">Management & Approval</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-link" href="#overview">Introduction</a>
+    <a class="nav-link" href="#workflow">Upload Workflow</a>
+    <a class="nav-link" href="#approval">Approval System</a>
+    <a class="nav-link" href="#security">Security & Validation</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Endpoints</div>
+    <a class="nav-link" href="#ep-upload">Upload</a>
+    <a class="nav-link" href="#ep-delete">Delete / Remove</a>
+    <a class="nav-link" href="#ep-approve">Admin Approval</a>
+    <a class="nav-link" href="#ep-status">Status & History</a>
+    <a class="nav-link" href="#ep-search">Search & Filter</a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Reference</div>
+    <a class="nav-link" href="#storage">Storage Strategy</a>
+    <a class="nav-link" href="#settings">Configuration</a>
+  </div>
+</nav>
+
+<!-- ───── MAIN ───── -->
+<main class="main">
+
+  <!-- HEADER -->
+  <div class="doc-header" id="overview">
+    <div class="badge-row">
+      <span class="badge dark">Profile Photo Management</span>
+      <span class="badge">REST API</span>
+      <span class="badge">AWS S3 / R2</span>
+      <span class="badge">Admin Approval</span>
+    </div>
+    <h1>Profile Photo<br>Management & Approval</h1>
+    <p class="lead">Comprehensive backend system for user profile photo upload, validation, storage, and admin review workflow. Handles image processing, content moderation, and account verification requirements.</p>
+  </div>
+
+  <!-- WORKFLOW -->
+  <div class="doc-section" id="workflow">
+    <h2>Photo Upload Workflow</h2>
+    <p>The upload process follows a multi-stage pipeline: client upload → server validation → image processing → storage → optional admin review → profile update.</p>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 940 140" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace" font-size="10">
+        <!-- Stage 1: Client -->
+        <rect x="0" y="30" width="110" height="80" fill="#0a0a0a" rx="2"/>
+        <text x="55" y="50" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">User</text>
+        <text x="55" y="64" fill="#888" text-anchor="middle" font-size="8">Selects Photo</text>
+        <text x="55" y="78" fill="#888" text-anchor="middle" font-size="8">(JPEG/PNG)</text>
+        <text x="55" y="102" fill="#888" text-anchor="middle" font-size="8">max 5MB</text>
+
+        <!-- Arrow -->
+        <line x1="110" y1="70" x2="145" y2="70" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Stage 2: Validation -->
+        <rect x="145" y="30" width="115" height="80" fill="#1a1a1a" rx="2"/>
+        <text x="202.5" y="50" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">Validation</text>
+        <text x="202.5" y="64" fill="#888" text-anchor="middle" font-size="8">• Format check</text>
+        <text x="202.5" y="76" fill="#888" text-anchor="middle" font-size="8">• Size limit</text>
+        <text x="202.5" y="88" fill="#888" text-anchor="middle" font-size="8">• MIME type</text>
+
+        <!-- Arrow -->
+        <line x1="260" y1="70" x2="295" y2="70" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Stage 3: Processing -->
+        <rect x="295" y="30" width="130" height="80" fill="#1a1a1a" rx="2"/>
+        <text x="360" y="50" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">Image Processing</text>
+        <text x="360" y="64" fill="#888" text-anchor="middle" font-size="8">• Resize (256x256)</text>
+        <text x="360" y="76" fill="#888" text-anchor="middle" font-size="8">• Compress</text>
+        <text x="360" y="88" fill="#888" text-anchor="middle" font-size="8">• Generate thumbnail</text>
+
+        <!-- Arrow -->
+        <line x1="425" y1="70" x2="460" y2="70" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Stage 4: Storage -->
+        <rect x="460" y="30" width="120" height="80" fill="#1a1a1a" rx="2"/>
+        <text x="520" y="50" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">Cloud Storage</text>
+        <text x="520" y="64" fill="#888" text-anchor="middle" font-size="8">Upload to S3/R2</text>
+        <text x="520" y="76" fill="#888" text-anchor="middle" font-size="8">Get public URL</text>
+        <text x="520" y="88" fill="#888" text-anchor="middle" font-size="8">Store in PostgreSQL</text>
+
+        <!-- Arrow -->
+        <line x1="580" y1="70" x2="615" y2="70" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Stage 5: Review -->
+        <rect x="615" y="30" width="130" height="80" fill="#1a1a1a" rx="2"/>
+        <text x="680" y="50" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">Admin Review</text>
+        <text x="680" y="64" fill="#888" text-anchor="middle" font-size="8">Content moderation</text>
+        <text x="680" y="76" fill="#888" text-anchor="middle" font-size="8">Auto-flag suspicious</text>
+        <text x="680" y="88" fill="#888" text-anchor="middle" font-size="8">Approve / Reject</text>
+
+        <!-- Arrow -->
+        <line x1="745" y1="70" x2="780" y2="70" stroke="#444" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Stage 6: Complete -->
+        <rect x="780" y="30" width="110" height="80" fill="#0a0a0a" rx="2"/>
+        <text x="835" y="50" fill="#f5f5f0" text-anchor="middle" font-size="9" font-weight="600">Active Profile</text>
+        <text x="835" y="64" fill="#888" text-anchor="middle" font-size="8">Photo displayed</text>
+        <text x="835" y="76" fill="#888" text-anchor="middle" font-size="8">in search results</text>
+        <text x="835" y="88" fill="#888" text-anchor="middle" font-size="8">& public profile</text>
+
+        <defs>
+          <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#444"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="info-box">
+      <strong>Key Points:</strong> Photos are stored with version control. Previous photos are archived, not deleted. Approved photos become the active profile image. Rejected photos remain in the user's gallery for re-submission after corrections.
+    </div>
+  </div>
+
+  <!-- APPROVAL SYSTEM -->
+  <div class="doc-section" id="approval">
+    <h2>Admin Approval System</h2>
+    <p>All profile photos go through an optional admin review queue. The system flags suspicious or policy-violating content for manual verification.</p>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace" font-size="10">
+        <!-- Photo Status States -->
+        <text x="10" y="25" fill="#555" font-size="8" letter-spacing="0.1em">PHOTO STATUS FLOW</text>
+
+        <!-- pending -->
+        <rect x="10" y="40" width="90" height="50" fill="#f5f0e8" stroke="#6a4a1a" stroke-width="1.5" rx="2"/>
+        <text x="55" y="60" fill="#6a4a1a" text-anchor="middle" font-weight="600" font-size="9">pending</text>
+        <text x="55" y="75" fill="#6a4a1a" text-anchor="middle" font-size="8">(in queue)</text>
+
+        <!-- Arrow to reviewed -->
+        <line x1="100" y1="65" x2="130" y2="65" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+        <!-- Label background for "admin review" (positioned above arrow) -->
+        <rect x="102" y="32" width="28" height="20" fill="#f5f5f0" stroke="#ddd" stroke-width="0.5" rx="2"/>
+        <text x="116" y="40" fill="#333" font-size="8" font-weight="500" text-anchor="middle">admin</text>
+        <text x="116" y="50" fill="#333" font-size="8" font-weight="500" text-anchor="middle">review</text>
+
+        <!-- approved -->
+        <rect x="130" y="40" width="90" height="50" fill="#e8f0e8" stroke="#2a5a2a" stroke-width="1.5" rx="2"/>
+        <text x="175" y="60" fill="#2a5a2a" text-anchor="middle" font-weight="600" font-size="9">approved</text>
+        <text x="175" y="75" fill="#2a5a2a" text-anchor="middle" font-size="8">(active)</text>
+
+        <!-- rejected path -->
+        <line x1="55" y1="90" x2="55" y2="120" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+        <!-- Label background for "fails check" (positioned right of arrow) -->
+        <rect x="75" y="100" width="35" height="20" fill="#f5f5f0" stroke="#ddd" stroke-width="0.5" rx="2"/>
+        <text x="92.5" y="108" fill="#333" font-size="8" font-weight="500" text-anchor="middle">fails</text>
+        <text x="92.5" y="118" fill="#333" font-size="8" font-weight="500" text-anchor="middle">check</text>
+
+        <!-- rejected -->
+        <rect x="10" y="120" width="90" height="50" fill="#f5e8e8" stroke="#6a1a1a" stroke-width="1.5" rx="2"/>
+        <text x="55" y="140" fill="#6a1a1a" text-anchor="middle" font-weight="600" font-size="9">rejected</text>
+        <text x="55" y="155" fill="#6a1a1a" text-anchor="middle" font-size="8">(with reason)</text>
+
+        <!-- Flow 2: Auto-approve without review -->
+        <text x="250" y="25" fill="#555" font-size="8" letter-spacing="0.1em">AUTO-APPROVE PATH</text>
+
+        <rect x="250" y="40" width="100" height="50" fill="#f5f0e8" stroke="#6a4a1a" stroke-width="1.5" rx="2"/>
+        <text x="300" y="55" fill="#6a4a1a" text-anchor="middle" font-weight="600" font-size="9">Photo Upload</text>
+        <text x="300" y="70" fill="#6a4a1a" text-anchor="middle" font-size="8">(valid format)</text>
+
+        <line x1="350" y1="65" x2="380" y2="65" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+        <!-- Label background for "if no flags" (positioned above arrow) -->
+        <rect x="347" y="32" width="38" height="20" fill="#f5f5f0" stroke="#ddd" stroke-width="0.5" rx="2"/>
+        <text x="366" y="40" fill="#333" font-size="8" font-weight="500" text-anchor="middle">if no</text>
+        <text x="366" y="50" fill="#333" font-size="8" font-weight="500" text-anchor="middle">flags</text>
+
+        <rect x="380" y="40" width="100" height="50" fill="#e8f0e8" stroke="#2a5a2a" stroke-width="1.5" rx="2"/>
+        <text x="430" y="60" fill="#2a5a2a" text-anchor="middle" font-weight="600" font-size="9">Auto-Approved</text>
+        <text x="430" y="75" fill="#2a5a2a" text-anchor="middle" font-size="8">(Instant)</text>
+
+        <!-- Flow 3: Content Moderation -->
+        <text x="550" y="25" fill="#555" font-size="8" letter-spacing="0.1em">CONTENT CHECKS</text>
+
+        <g id="checks">
+          <rect x="550" y="40" width="220" height="125" fill="#f0f0eb" stroke="#ddddd8" stroke-width="1" rx="2"/>
+          <text x="560" y="55" fill="#555" font-weight="600" font-size="9">Automated Checks:</text>
+          <line x1="560" y1="62" x2="760" y2="62" stroke="#ddddd8" stroke-width="0.5"/>
+          
+          <text x="570" y="78" fill="#666" font-size="8">✓ MIME type validation</text>
+          <text x="570" y="93" fill="#666" font-size="8">✓ Dimension check (256x256)</text>
+          <text x="570" y="108" fill="#666" font-size="8">✓ File size verification</text>
+          <text x="570" y="123" fill="#666" font-size="8">✓ EXIF data extraction</text>
+          <text x="570" y="138" fill="#666" font-size="8">✓ Duplicate detection (hash)</text>
+        </g>
+
+        <defs>
+          <marker id="arr2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </div>
+
+  <!-- SECURITY & VALIDATION -->
+  <div class="doc-section" id="security">
+    <h2>Security & Validation</h2>
+
+    <h3>File Upload Security</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li><strong>File Size:</strong> Maximum 5 MB per image</li>
+      <li><strong>Formats Allowed:</strong> JPEG, PNG only (MIME: image/jpeg, image/png)</li>
+      <li><strong>Dimensions:</strong> Minimum 200x200px, maximum 5000x5000px</li>
+      <li><strong>File Validation:</strong> Magic number check (no disguised files)</li>
+      <li><strong>Rate Limiting:</strong> Max 10 uploads per hour per user</li>
+      <li><strong>Virus Scan:</strong> Optional ClamAV integration for production</li>
+    </ul>
+
+    <h3>Storage & Access Control</h3>
+    <ul style="margin-left: 1rem; margin-bottom: 1rem;">
+      <li>Photos stored with randomized filenames (UUID prefix)</li>
+      <li>S3/R2 bucket configured for public read (CDN delivery)</li>
+      <li>Original file not stored; only processed versions</li>
+      <li>EXIF metadata stripped before upload</li>
+      <li>Soft-delete: photos marked as archived, not permanently deleted</li>
+    </ul>
+
+    <h3>Content Moderation</h3>
+    <div class="info-box">
+      <strong>Auto-flagging criteria:</strong> Dimensions outside range · Corrupt metadata · Duplicate detection (hash matching) · Manual admin review required for borderline cases
+    </div>
+  </div>
+
+  <!-- ENDPOINTS: UPLOAD -->
+  <div class="doc-section" id="ep-upload">
+    <h2>Upload Endpoints  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  /profile-photo</small></h2>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/profile-photo/upload</span>
+        <span class="endpoint-desc">Upload new profile photo</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request</div>
+        <p><strong>Type:</strong> Multipart form-data</p>
+        <p><strong>Field:</strong> <code>photo</code> (file, required)</p>
+        <table class="param-table">
+          <thead><tr><th>Constraint</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Max File Size</td><td>5 MB</td></tr>
+            <tr><td>Allowed MIME Types</td><td>image/jpeg, image/png</td></tr>
+            <tr><td>Min Dimensions</td><td>200 × 200 px</td></tr>
+            <tr><td>Max Dimensions</td><td>5000 × 5000 px</td></tr>
+            <tr><td>Rate Limit</td><td>10 uploads per hour</td></tr>
+          </tbody>
+        </table>
+
+        <div class="section-label">Response 200</div>
+        <pre>{
+  "status": true,
+  "message": "Photo uploaded successfully",
+  "photo": {
+    "id": 42,
+    "user_id": 5,
+    "photo_url": "https://cdn.riseflake.com/photos/uuid-abc123.jpg",
+    "thumbnail_url": "https://cdn.riseflake.com/photos/uuid-abc123-thumb.jpg",
+    "status": "approved",
+    "is_active": true,
+    "upload_date": "2025-08-15T10:30:00Z",
+    "metadata": {
+      "width": 512,
+      "height": 512,
+      "format": "jpeg",
+      "file_size": 125000
+    }
+  }
+}</pre>
+
+        <div class="section-label">Error Codes</div>
+        <table class="param-table">
+          <thead><tr><th>Code</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>400</td><td>Invalid file format or size</td></tr>
+            <tr><td>401</td><td>Not authenticated</td></tr>
+            <td>413</td><td>Payload too large</td></tr>
+            <tr><td>429</td><td>Rate limit exceeded (10/hour)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="section-label">Notes</div>
+        <p>• Photo is resized to 512×512 and thumbnail created (256×256)<br/>
+           • Auto-approved for most users; flagged photos go to admin queue<br/>
+           • Previous photo automatically archived<br/>
+           • EXIF metadata stripped before upload to S3/R2</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/profile-photo/upload-batch</span>
+        <span class="endpoint-desc">Upload multiple photos (candidate gallery)</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request</div>
+        <p><strong>Type:</strong> Multipart form-data with multiple files</p>
+        <table class="param-table">
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>photos</td><td>file[]</td><td>Array of image files (max 5 files)</td></tr>
+            <tr><td>description[]</td><td>string[]</td><td>Optional description per photo</td></tr>
+          </tbody>
+        </table>
+
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "uploaded": 3, "photos": [...], "failed": 0 }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/profile-photo/history</span>
+        <span class="endpoint-desc">Get all uploaded photos (with status)</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Query Params</div>
+        <table class="param-table">
+          <thead><tr><th>Param</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>status</td><td>string</td><td>pending, approved, rejected, archived</td></tr>
+            <tr><td>page</td><td>integer</td><td>Default 1</td></tr>
+            <tr><td>limit</td><td>integer</td><td>Default 20</td></tr>
+          </tbody>
+        </table>
+
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "photos": [...], "pagination": { "page": 1, "limit": 20, "total": 15 } }</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENDPOINTS: DELETE -->
+  <div class="doc-section" id="ep-delete">
+    <h2>Delete / Remove Endpoints</h2>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/profile-photo/remove</span>
+        <span class="endpoint-desc">Remove active profile photo</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Notes</div>
+        <p>Sets the current active photo to archived. Does not delete from storage. The photo becomes unavailable on public profiles but remains in the user's upload history.</p>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "message": "Photo removed from profile" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/profile-photo/:id</span>
+        <span class="endpoint-desc">Delete specific photo from history</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Notes</div>
+        <p>Only user who uploaded or admins can delete. Removes from S3/R2 and marks as archived in DB.</p>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "message": "Photo deleted successfully" }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method DELETE">DELETE</span>
+        <span class="endpoint-path">/profile-photo/batch-delete</span>
+        <span class="endpoint-desc">Bulk delete multiple photos</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "photo_ids": [42, 43, 44] }</pre>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "deleted_count": 3 }</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENDPOINTS: APPROVAL -->
+  <div class="doc-section" id="ep-approve">
+    <h2>Admin Approval Endpoints  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  admin only</small></h2>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/admin/photos/approval-queue</span>
+        <span class="endpoint-desc">Get pending photos for review</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Query Params</div>
+        <table class="param-table">
+          <thead><tr><th>Param</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>priority</td><td>string</td><td>all, high, escalated</td></tr>
+            <tr><td>assigned_to</td><td>integer</td><td>Filter by moderator ID</td></tr>
+            <tr><td>page / limit</td><td>integer</td><td>Pagination</td></tr>
+          </tbody>
+        </table>
+
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "queue": [
+  { "id": 1, "photo_id": 42, "user_id": 5, "photo_url": "...", "uploaded_at": "...", "priority": 0, "flags": [] }
+], "count": 12 }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/admin/photos/:id/approve</span>
+        <span class="endpoint-desc">Approve a photo for use</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "notes": "Approved - quality OK" }</pre>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "photo": { "id": 42, "status": "approved", "approval_date": "2025-08-15T11:00:00Z", "approved_by": 1 } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/admin/photos/:id/reject</span>
+        <span class="endpoint-desc">Reject a photo with reason</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "reason": "Blurry image - ask user to resubmit", "notes": "Optional detailed notes for user" }</pre>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "photo": { "id": 42, "status": "rejected", "approval_reason": "Blurry image..." } }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method PATCH">PATCH</span>
+        <span class="endpoint-path">/admin/photos/:id/flag</span>
+        <span class="endpoint-desc">Flag photo for escalation / manual review</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "flag_reason": "Potential policy violation", "priority": 2 }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/admin/photos/stats</span>
+        <span class="endpoint-desc">Get approval queue statistics</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "stats": {
+  "pending": 47,
+  "high_priority": 8,
+  "escalated": 2,
+  "approved_today": 156,
+  "rejected_today": 12,
+  "avg_approval_time_mins": 15
+} }</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENDPOINTS: STATUS -->
+  <div class="doc-section" id="ep-status">
+    <h2>Status & History Endpoints</h2>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/profile-photo/status/:photoId</span>
+        <span class="endpoint-desc">Get status of a specific photo</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "photo": {
+  "id": 42,
+  "status": "approved",
+  "is_active": true,
+  "upload_date": "2025-08-15T10:30:00Z",
+  "approval_date": "2025-08-15T10:35:00Z",
+  "approved_by": 1,
+  "metadata": { "width": 512, "height": 512, "file_size": 125000 }
+} }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/profile-photo/current</span>
+        <span class="endpoint-desc">Get currently active profile photo</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "photo": { "id": 42, "photo_url": "https://...", "thumbnail_url": "https://..." } }</pre>
+        <div class="section-label">Notes</div>
+        <p>Returns 404 if user has no approved active photo.</p>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/profile-photo/moderation-logs</span>
+        <span class="endpoint-desc">Get audit trail for all user's photos</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "logs": [
+  { "id": 1, "photo_id": 42, "action": "uploaded", "created_at": "2025-08-15T10:30:00Z" },
+  { "id": 2, "photo_id": 42, "action": "approved", "admin_id": 1, "created_at": "2025-08-15T10:35:00Z" }
+] }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/profile-photo/rejection-reasons</span>
+        <span class="endpoint-desc">Get reasons for any rejected photos</span>
+        <span class="auth-badge required">auth</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "rejections": [
+  { "photo_id": 40, "reason": "Blurry image", "rejected_date": "2025-08-14T...", "can_resubmit": true }
+] }</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENDPOINTS: SEARCH -->
+  <div class="doc-section" id="ep-search">
+    <h2>Search & Filter Endpoints  <small style="font-size:0.65rem;font-weight:400;font-family:IBM Plex Mono;color:#888">  admin only</small></h2>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/admin/photos/search</span>
+        <span class="endpoint-desc">Search photos by user or status</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Query Params</div>
+        <table class="param-table">
+          <thead><tr><th>Param</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>q</td><td>string</td><td>Search by username or email</td></tr>
+            <tr><td>status</td><td>string</td><td>pending, approved, rejected, archived</td></tr>
+            <tr><td>from_date</td><td>date</td><td>YYYY-MM-DD</td></tr>
+            <tr><td>to_date</td><td>date</td><td>YYYY-MM-DD</td></tr>
+            <tr><td>page / limit</td><td>integer</td><td>Pagination</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method GET">GET</span>
+        <span class="endpoint-path">/admin/photos/duplicates</span>
+        <span class="endpoint-desc">Find duplicate photos (by hash)</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "duplicates": [
+  { "file_hash": "abc123def", "count": 3, "photos": [{ "id": 42, "user_id": 5, "upload_date": "..." }] }
+] }</pre>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-header" onclick="toggle(this)">
+        <span class="method POST">POST</span>
+        <span class="endpoint-path">/admin/photos/bulk-action</span>
+        <span class="endpoint-desc">Bulk approve / reject / archive photos</span>
+        <span class="auth-badge required">auth · admin</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="endpoint-body">
+        <div class="section-label">Request Body</div>
+        <pre>{ "photo_ids": [42, 43, 44], "action": "approve", "reason": "Batch approved" }</pre>
+        <div class="section-label">Response 200</div>
+        <pre>{ "status": true, "updated": 3 }</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORAGE STRATEGY -->
+  <div class="doc-section" id="storage">
+    <h2>Storage Strategy</h2>
+
+    <h3>Cloud Storage (AWS S3 / Cloudflare R2)</h3>
+    <p>Profile photos are stored in a dedicated S3 bucket or R2 instance with the following structure:</p>
+    <pre>s3://riseflake-photos/
+├── profiles/
+│   ├── {user_id}/
+│   │   ├── {uuid}-original.jpg      (archived, not public)
+│   │   ├── {uuid}-512x512.jpg       (main profile photo)
+│   │   └── {uuid}-256x256.jpg       (thumbnail)
+│   ├── ...
+├── temp/
+│   ├── {upload_session_id}/         (temporary during upload)
+│   └── ...
+└── archive/
+    └── {user_id}-{timestamp}/       (monthly backups)</pre>
+
+    <div class="info-box">
+      <strong>CDN Strategy:</strong> CloudFront or similar CDN fronts the S3 bucket for faster global delivery. Image URLs are publicly accessible (no authentication needed for viewing).
+    </div>
+
+    <h3>Local Processing</h3>
+    <p>All image processing happens on the backend server using Sharp library:</p>
+    <pre>// Pseudocode
+const image = await sharp(uploadBuffer)
+  .resize(512, 512, { fit: 'cover' })
+  .jpeg({ quality: 85, progressive: true })
+  .toBuffer();
+
+const thumb = await sharp(uploadBuffer)
+  .resize(256, 256, { fit: 'cover' })
+  .jpeg({ quality: 80, progressive: true })
+  .toBuffer();</pre>
+
+    <h3>Retention Policy</h3>
+    <table>
+      <thead><tr><th>Photo Status</th><th>Retention</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Active (approved)</td><td>Indefinite</td><td>Never auto-deleted</td></tr>
+        <tr><td>Archived</td><td>90 days</td><td>Can be restored by user within 90 days</td></tr>
+        <tr><td>Rejected</td><td>30 days</td><td>Can be resubmitted</td></tr>
+        <tr><td>Temp (failed upload)</td><td>24 hours</td><td>Auto-cleaned by cron job</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CONFIGURATION -->
+  <div class="doc-section" id="settings">
+    <h2>Configuration & Environment</h2>
+
+    <h3>Environment Variables</h3>
+    <pre># Profile Photo Storage
+PHOTO_MAX_FILE_SIZE=5242880               # 5 MB in bytes
+PHOTO_ALLOWED_FORMATS=jpeg,png
+PHOTO_MIN_DIMENSIONS=200
+PHOTO_MAX_DIMENSIONS=5000
+PHOTO_THUMB_SIZE=256
+
+# Rate Limiting
+PHOTO_UPLOAD_RATE_LIMIT=10                # uploads per hour
+PHOTO_UPLOAD_TIME_WINDOW=3600             # seconds
+
+# S3/R2 Configuration
+S3_BUCKET_PHOTOS=riseflake-photos
+S3_REGION=us-east-1
+R2_BUCKET_NAME=riseflake-photos
+R2_ENDPOINT=https://r2-endpoint.example.com
+
+# Processing
+SHARP_QUALITY_MAIN=85                     # JPEG quality for main image
+SHARP_QUALITY_THUMB=80                    # JPEG quality for thumbnail
+
+# Admin Review
+PHOTO_AUTO_APPROVE_ENABLED=true           # Skip queue if no flags
+PHOTO_REQUIRE_ADMIN_APPROVAL=false        # Force review for all
+PHOTO_CONTENT_MODERATION_ENABLED=true     # Use auto-flagging
+
+# Retention
+PHOTO_ARCHIVE_RETENTION_DAYS=90
+PHOTO_REJECTED_RETENTION_DAYS=30
+PHOTO_TEMP_CLEANUP_HOURS=24</pre>
+
+    <h3>Feature Flags</h3>
+    <table>
+      <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+      <tbody>
+        <tr><td>photo_upload_enabled</td><td>Allow user photo uploads</td><td>true</td></tr>
+        <tr><td>photo_batch_upload_enabled</td><td>Allow multiple photo uploads</td><td>true</td></tr>
+        <tr><td>photo_auto_approve</td><td>Auto-approve photos (no flag)</td><td>true</td></tr>
+        <tr><td>photo_admin_queue</td><td>Show pending queue to admins</td><td>true</td></tr>
+        <tr><td>photo_duplicate_detection</td><td>Flag duplicate photos</td><td>true</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Scheduled Maintenance</h3>
+    <table>
+      <thead><tr><th>Schedule</th><th>Task</th></tr></thead>
+      <tbody>
+        <tr><td>Daily @ 2:00 AM</td><td>Clean up temp files older than 24 hours</td></tr>
+        <tr><td>Daily @ 3:00 AM</td><td>Archive rejected photos older than 30 days</td></tr>
+        <tr><td>Weekly (Sunday)</td><td>Backup all approved photos to archive storage</td></tr>
+        <tr><td>Monthly</td><td>Generate photo upload statistics and compliance report</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+</div>
+
+<script>
+  function toggle(header) {
+    const body = header.nextElementSibling;
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    header.classList.toggle('open', !isOpen);
+  }
+
+  // Active nav highlighting
+  const sections = document.querySelectorAll('[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-10% 0px -85% 0px' });
+  sections.forEach(s => observer.observe(s));
+
+  // Sidebar close/open controls
+  const body = document.body;
+  const sidebar = document.querySelector('.sidebar');
+  const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+  const openSidebarBtn = document.getElementById('openSidebarBtn');
+  if (closeSidebarBtn) {
+    closeSidebarBtn.addEventListener('click', () => body.classList.add('sidebar-closed'));
+  }
+  if (openSidebarBtn) {
+    openSidebarBtn.addEventListener('click', () => body.classList.remove('sidebar-closed'));
+  }
+</script>
+</body>
+</html>
